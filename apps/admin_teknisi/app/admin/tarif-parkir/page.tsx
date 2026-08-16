@@ -272,7 +272,7 @@ export default function TarifParkirPage() {
                 items.map((tarif, index) => (
                   <tr key={tarif.id} className={`${index % 2 === 0 ? 'bg-[#322A1F]' : 'bg-[#231F1A]'} hover:bg-[#3d3326] transition-colors`}>
                     <td className="px-6 py-4 font-medium text-center">{startIndex + index}.</td>
-                    <td className="px-6 py-4 text-center font-medium text-[#B5884D]">{tarif.name}</td>
+                    <td className="px-6 py-4 text-center">{tarif.name}</td>
                     <td className="px-6 py-4 text-center">{vehicleTypeNames.get(tarif.vehicle_type_id) ?? '-'}</td>
                     <td className="px-6 py-4 text-center">{tarif.fee_category === 'progresif' ? 'Progresif' : 'Flat'}</td>
                     <td className="px-6 py-4 text-center">{formatRupiah(tarif.base_price)}</td>
