@@ -8,10 +8,10 @@ interface HeaderProps {
 
 export default function Header({ title, userName, userRole }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between pb-5 border-b-[2px] border-[#B5884D]">
+    <header className="flex items-center justify-between pb-5 border-b-[2px] border-[#BF8F51]">
       
       <div className="flex items-center">
-        <h2 className="text-2xl md:text-[28px] font-bold text-[#B5884D]">
+        <h2 className="text-2xl md:text-[28px] font-bold text-[#BF8F51]">
           {title}
         </h2>
       </div>
@@ -19,7 +19,7 @@ export default function Header({ title, userName, userRole }: HeaderProps) {
       <div className="flex items-center gap-6">
         
         {/* Garis Vertikal Pemisah Profil (Sesuai Gambar Figma) */}
-        <div className="hidden sm:block w-[1px] h-[62px] bg-[#B5884D]"></div>
+        <div className="hidden sm:block w-[1px] h-[62px] bg-[#BF8F51]"></div>
         
         {/* Grup Avatar & Nama */}
         <div className="flex items-center gap-3.5">
@@ -37,7 +37,7 @@ export default function Header({ title, userName, userRole }: HeaderProps) {
         </div>
         
         {/* Ikon Logout */}
-        <button className="text-[#B5884D] hover:opacity-80 transition-opacity ml-1">
+        <button className="text-[#BF8F51] hover:opacity-80 transition-opacity ml-1">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
