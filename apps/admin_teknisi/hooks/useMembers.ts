@@ -5,23 +5,18 @@ import {
   blockMember,
   createMember,
   createMemberSubscription,
-  createMemberVehicle,
   createSubscriptionPlan,
   cancelMemberSubscription,
   deleteMember,
   deleteMemberSubscription,
-  deleteMemberVehicle,
   deleteSubscriptionPlan,
   getMember,
   getMemberSubscription,
-  getMemberVehicle,
   getSubscriptionPlan,
   listMembers,
   listMemberSubscriptions,
-  listMemberVehicles,
   listSubscriptionPlans,
   updateMember,
-  updateMemberVehicle,
   updateSubscriptionPlan,
   updateSubscriptionPlanStatus,
 } from '@/lib/api/members';
@@ -30,9 +25,6 @@ import type {
   MemberListParams,
   MemberSubscriptionCreate,
   MemberUpdate,
-  MemberVehicleCreate,
-  MemberVehicleListParams,
-  MemberVehicleUpdate,
   MemberSubscriptionListParams,
   SubscriptionPlanCreate,
   SubscriptionPlanListParams,
@@ -44,7 +36,6 @@ export const memberKeys = {
   all: ['members'] as const,
   list: (params?: MemberListParams) => [...memberKeys.all, 'list', params] as const,
   detail: (id: string) => [...memberKeys.all, 'detail', id] as const,
-  vehicles: ['member-vehicles'] as const,
   subscriptions: ['member-subscriptions'] as const,
   plans: ['subscription-plans'] as const,
 };
@@ -97,50 +88,6 @@ export function useBlockMember() {
   return useMutation({
     mutationFn: (id: string) => blockMember(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.all }),
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Member Vehicles
-// ---------------------------------------------------------------------------
-
-export function useMemberVehicles(params?: MemberVehicleListParams) {
-  return useQuery({
-    queryKey: [...memberKeys.vehicles, 'list', params] as const,
-    queryFn: () => listMemberVehicles(params),
-  });
-}
-
-export function useMemberVehicle(id: string) {
-  return useQuery({
-    queryKey: [...memberKeys.vehicles, 'detail', id] as const,
-    queryFn: () => getMemberVehicle(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreateMemberVehicle() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: MemberVehicleCreate) => createMemberVehicle(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.vehicles }),
-  });
-}
-
-export function useUpdateMemberVehicle() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: MemberVehicleUpdate }) =>
-      updateMemberVehicle(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.vehicles }),
-  });
-}
-
-export function useDeleteMemberVehicle() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteMemberVehicle(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.vehicles }),
   });
 }
 

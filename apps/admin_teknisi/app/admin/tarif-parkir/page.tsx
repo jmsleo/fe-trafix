@@ -9,6 +9,7 @@ import {
   useUpdateParkingRate,
 } from '@/hooks/useParkingRates';
 import { useVehicleTypes } from '@/hooks/useVehicleTypes';
+import { getApiErrorMessage } from '@/lib/api/errors';
 import type { ActiveStatus, FeeCategory, ParkingRateRead } from '@/lib/api/types';
 
 interface TarifForm {
@@ -161,13 +162,13 @@ export default function TarifParkirPage() {
         { id: idYangDiedit, data: payload },
         {
           onSuccess: onSettled,
-          onError: () => setFormError('Gagal menyimpan perubahan. Coba lagi.'),
+          onError: (error) => setFormError(getApiErrorMessage(error, 'Gagal menyimpan perubahan. Coba lagi.')),
         },
       );
     } else {
       createTarif.mutate(payload, {
         onSuccess: onSettled,
-        onError: () => setFormError('Gagal menyimpan tarif. Coba lagi.'),
+        onError: (error) => setFormError(getApiErrorMessage(error, 'Gagal menyimpan tarif. Coba lagi.')),
       });
     }
   };

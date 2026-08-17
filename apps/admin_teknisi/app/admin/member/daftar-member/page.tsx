@@ -4,17 +4,14 @@ import Button from '@/app/components/ui/Button';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   useCreateMember,
-  useCreateMemberSubscription,
-  useCreateMemberVehicle,
   useDeleteMember,
-  useMemberSubscriptions,
   useMembers,
   useSubscriptionPlans,
   useUpdateMember,
-  useUpdateMemberVehicle,
 } from '@/hooks/useMembers';
 import { useVehicleTypes } from '@/hooks/useVehicleTypes';
-import type { MemberRead, MemberStatus, MemberSubscriptionRead } from '@/lib/api/types';
+import { getApiErrorMessage } from '@/lib/api/errors';
+import type { MemberRead, MemberStatus } from '@/lib/api/types';
 
 interface MemberForm {
   name: string;
@@ -24,7 +21,6 @@ interface MemberForm {
   phone_number: string;
   email: string;
   plan_id: string;
-  start_date: string;
 }
 
 const emptyForm: MemberForm = {
@@ -35,7 +31,6 @@ const emptyForm: MemberForm = {
   phone_number: '',
   email: '',
   plan_id: '',
-  start_date: '',
 };
 
 function formatTanggalInput(iso?: string | null): string {
@@ -92,7 +87,6 @@ export default function DaftarMemberPage() {
 
   const { data: vehicleTypesData } = useVehicleTypes({ page_size: 100 });
   const { data: plansData } = useSubscriptionPlans({ page_size: 100 });
-  const { data: subscriptionsData } = useMemberSubscriptions({ page_size: 100 });
 
   const vehicleTypeNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -100,26 +94,14 @@ export default function DaftarMemberPage() {
     return map;
   }, [vehicleTypesData]);
 
-  const subscriptionByMember = useMemo(() => {
-    const map = new Map<string, MemberSubscriptionRead>();
-    for (const sub of subscriptionsData?.items ?? []) {
-      if (!map.has(sub.member_id)) map.set(sub.member_id, sub);
-    }
-    return map;
-  }, [subscriptionsData]);
-
   // 2. MUTATIONS
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
-  const createVehicle = useCreateMemberVehicle();
-  const updateVehicle = useUpdateMemberVehicle();
-  const createSubscription = useCreateMemberSubscription();
 
   // 3. STATE MODAL FORM
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [idYangDiedit, setIdYangDiedit] = useState<string | null>(null);
-  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [formData, setFormData] = useState<MemberForm>(emptyForm);
   const [isStatusActive, setIsStatusActive] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -137,30 +119,34 @@ export default function DaftarMemberPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const editedMember = useMemo(() => {
+    if (!idYangDiedit) return null;
+    return (data?.items ?? []).find((m) => m.id === idYangDiedit) ?? null;
+  }, [idYangDiedit, data]);
+
+  const currentSub = editedMember?.subscriptions?.[0];
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const handleKlikTambah = () => {
-    const today = new Date().toISOString().split('T')[0];
     setIdYangDiedit(null);
-    setEditingVehicleId(null);
-    setFormData({ ...emptyForm, start_date: today });
+    setFormData(emptyForm);
     setIsStatusActive(true);
     setFormError(null);
     setIsModalOpen(true);
   };
 
   const handleKlikEdit = (member: MemberRead) => {
-    const sub = subscriptionByMember.get(member.id);
+    const sub = member.subscriptions?.[0];
     const vehicle = member.vehicles?.[0];
     setIdYangDiedit(member.id);
-    setEditingVehicleId(vehicle?.id ?? null);
     setFormData({
       name: member.name,
       member_code: member.member_code,
       police_number: vehicle?.police_number ?? '',
-      vehicle_type_id: vehicle?.vehicle_type_id ?? '',
+      vehicle_type_id: vehicle?.vehicle_type?.id ?? '',
       phone_number: member.phone_number ?? '',
       email: member.email ?? '',
-      plan_id: sub?.plan_id ?? '',
-      start_date: formatTanggalInput(sub?.start_date) || new Date().toISOString().split('T')[0],
+      plan_id: sub?.plan?.id ?? '',
     });
     setIsStatusActive(member.status !== 'inactive');
     setFormError(null);
@@ -168,12 +154,11 @@ export default function DaftarMemberPage() {
   };
 
   const hitungTanggalBerakhir = () => {
-    if (idYangDiedit !== null) {
-      const sub = subscriptionByMember.get(idYangDiedit);
-      if (sub) return formatTanggalInput(sub.end_date);
+    if (idYangDiedit !== null && currentSub) {
+      return formatTanggalInput(currentSub.end_date);
     }
     if (!selectedPlan) return '';
-    return tambahHari(formData.start_date, selectedPlan.duration_in_days);
+    return tambahHari(todayStr, selectedPlan.duration_in_days);
   };
 
   const handleSimpanMember = async () => {
@@ -183,17 +168,19 @@ export default function DaftarMemberPage() {
       setFormError('Nama lengkap wajib diisi.');
       return;
     }
-    if (!formData.police_number.trim()) {
-      setFormError('No. plat kendaraan wajib diisi.');
-      return;
-    }
-    if (!formData.vehicle_type_id) {
-      setFormError('Jenis kendaraan wajib dipilih.');
-      return;
-    }
-    if (idYangDiedit === null && (!formData.plan_id || !formData.start_date)) {
-      setFormError('Paket membership dan tanggal mulai wajib diisi.');
-      return;
+    if (idYangDiedit === null) {
+      if (!formData.police_number.trim()) {
+        setFormError('No. plat kendaraan wajib diisi.');
+        return;
+      }
+      if (!formData.vehicle_type_id) {
+        setFormError('Jenis kendaraan wajib dipilih.');
+        return;
+      }
+      if (!formData.plan_id) {
+        setFormError('Paket membership wajib dipilih.');
+        return;
+      }
     }
 
     const statusTerbaru: MemberStatus = isStatusActive ? 'active' : 'inactive';
@@ -211,50 +198,23 @@ export default function DaftarMemberPage() {
             status: statusTerbaru,
           },
         });
-
-        if (editingVehicleId) {
-          await updateVehicle.mutateAsync({
-            id: editingVehicleId,
-            data: {
-              member_id: idYangDiedit,
-              vehicle_type_id: formData.vehicle_type_id,
-              police_number: policeNumber,
-            },
-          });
-        } else {
-          await createVehicle.mutateAsync({
-            member_id: idYangDiedit,
-            vehicle_type_id: formData.vehicle_type_id,
-            police_number: policeNumber,
-          });
-        }
       } else {
-        const member = await createMember.mutateAsync({
+        await createMember.mutateAsync({
           name: formData.name.trim(),
           email: formData.email || null,
           phone_number: formData.phone_number || null,
           status: statusTerbaru,
-        });
-
-        await createVehicle.mutateAsync({
-          member_id: member.id,
-          vehicle_type_id: formData.vehicle_type_id,
           police_number: policeNumber,
-        });
-
-        await createSubscription.mutateAsync({
-          member_id: member.id,
+          vehicle_type_id: formData.vehicle_type_id,
           plan_id: formData.plan_id,
-          start_date: formData.start_date,
         });
       }
 
       setIsModalOpen(false);
       setIdYangDiedit(null);
-      setEditingVehicleId(null);
       setFormData(emptyForm);
-    } catch {
-      setFormError('Gagal menyimpan data member. Coba lagi.');
+    } catch (error) {
+      setFormError(getApiErrorMessage(error, 'Gagal menyimpan data member. Coba lagi.'));
     } finally {
       setIsSaving(false);
     }
@@ -358,7 +318,7 @@ export default function DaftarMemberPage() {
                 <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data member.</td></tr>
               ) : (
                 items.map((m, index) => {
-                  const sub = subscriptionByMember.get(m.id);
+                  const sub = m.subscriptions?.[0];
                   const badge = m.status === 'active'
                     ? 'border-[#79FF8D] bg-[#00FF2659] text-[#79FF8D]'
                     : m.status === 'inactive'
@@ -459,13 +419,13 @@ export default function DaftarMemberPage() {
 
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-[#EAE1D8]">No. Plat Kendaraan</label>
-                  <input type="text" name="police_number" value={formData.police_number} onChange={handleInputChange} className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] uppercase" />
+                  <input type="text" name="police_number" value={formData.police_number} onChange={handleInputChange} disabled={idYangDiedit !== null} className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] uppercase disabled:cursor-not-allowed disabled:bg-[#1A1612] disabled:border-[#B5884D]/30 disabled:text-gray-500" />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#EAE1D8]">Jenis Kendaraan</label>
                   <div className="relative">
-                    <select name="vehicle_type_id" value={formData.vehicle_type_id} onChange={handleInputChange} className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] cursor-pointer">
+                    <select name="vehicle_type_id" value={formData.vehicle_type_id} onChange={handleInputChange} disabled={idYangDiedit !== null} className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] cursor-pointer disabled:cursor-not-allowed disabled:bg-[#1A1612] disabled:border-[#B5884D]/30 disabled:text-gray-500">
                       <option value="">Pilih Kendaraan</option>
                       {(vehicleTypesData?.items ?? []).map((vt) => (
                         <option key={vt.id} value={vt.id}>{vt.name}</option>
@@ -545,14 +505,12 @@ export default function DaftarMemberPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-[#EAE1D8]">Tanggal Mulai</label>
+                    <label className="text-sm font-medium text-[#EAE1D8]">Tanggal Mulai <span className="text-gray-400 font-normal">(Otomatis)</span></label>
                     <input
                       type="date"
-                      name="start_date"
-                      value={formData.start_date}
-                      onChange={handleInputChange}
-                      disabled={idYangDiedit !== null}
-                      className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] disabled:cursor-not-allowed disabled:bg-[#1A1612] disabled:border-[#B5884D]/30 disabled:text-gray-500"
+                      value={idYangDiedit !== null ? formatTanggalInput(currentSub?.start_date) || todayStr : todayStr}
+                      disabled
+                      className="w-full px-4 py-2.5 text-sm bg-[#1A1612] border border-[#B5884D]/30 rounded-[7px] text-gray-500 cursor-not-allowed focus:outline-none"
                       style={{ colorScheme: 'dark' }}
                     />
                   </div>

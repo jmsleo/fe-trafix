@@ -9,11 +9,6 @@ import type {
   MemberSubscriptionPage,
   MemberSubscriptionRead,
   MemberUpdate,
-  MemberVehicleCreate,
-  MemberVehicleListParams,
-  MemberVehiclePage,
-  MemberVehicleRead,
-  MemberVehicleUpdate,
   SubscriptionPlanCreate,
   SubscriptionPlanListParams,
   SubscriptionPlanPage,
@@ -53,39 +48,6 @@ export async function deleteMember(memberId: string): Promise<void> {
 export async function blockMember(memberId: string): Promise<MemberRead> {
   const response = await apiClient.patch<MemberRead>(`/members/${memberId}/block`);
   return response.data;
-}
-
-// ---------------------------------------------------------------------------
-// Member Vehicles
-// ---------------------------------------------------------------------------
-
-export async function listMemberVehicles(
-  params?: MemberVehicleListParams,
-): Promise<MemberVehiclePage> {
-  const response = await apiClient.get<MemberVehiclePage>('/member-vehicles/', { params });
-  return response.data;
-}
-
-export async function getMemberVehicle(vehicleId: string): Promise<MemberVehicleRead> {
-  const response = await apiClient.get<MemberVehicleRead>(`/member-vehicles/${vehicleId}`);
-  return response.data;
-}
-
-export async function createMemberVehicle(data: MemberVehicleCreate): Promise<MemberVehicleRead> {
-  const response = await apiClient.post<MemberVehicleRead>('/member-vehicles/', data);
-  return response.data;
-}
-
-export async function updateMemberVehicle(
-  vehicleId: string,
-  data: MemberVehicleUpdate,
-): Promise<MemberVehicleRead> {
-  const response = await apiClient.put<MemberVehicleRead>(`/member-vehicles/${vehicleId}`, data);
-  return response.data;
-}
-
-export async function deleteMemberVehicle(vehicleId: string): Promise<void> {
-  await apiClient.delete(`/member-vehicles/${vehicleId}`);
 }
 
 // ---------------------------------------------------------------------------

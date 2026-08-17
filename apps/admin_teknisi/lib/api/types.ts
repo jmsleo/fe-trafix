@@ -203,6 +203,9 @@ export interface MemberCreate {
   phone_number?: string | null;
   status: MemberStatus;
   created_by?: string | null;
+  police_number?: string | null;
+  vehicle_type_id?: string | null;
+  plan_id?: string | null;
 }
 
 export interface MemberUpdate {
@@ -223,7 +226,8 @@ export interface MemberRead {
   created_by?: string | null;
   created_at: string;
   updated_at: string;
-  vehicles?: MemberVehicleRead[];
+  vehicles?: MemberVehicleBrief[];
+  subscriptions?: MemberSubscriptionBrief[];
 }
 
 export interface MemberListParams extends PaginationParams {
@@ -243,35 +247,12 @@ export interface MemberVehicleTypeBrief {
   name: string;
 }
 
-export interface MemberVehicleCreate {
-  member_id: string;
-  vehicle_type_id: string;
-  police_number: string;
-}
-
-export interface MemberVehicleUpdate {
-  member_id?: string | null;
-  vehicle_type_id?: string | null;
-  police_number?: string | null;
-}
-
-export interface MemberVehicleRead {
+export interface MemberVehicleBrief {
   id: string;
-  member_id: string;
-  vehicle_type_id: string;
   police_number: string;
-  member: MemberBrief;
-  vehicle_type: VehicleTypeBrief;
+  vehicle_type: MemberVehicleTypeBrief;
   created_at: string;
-  updated_at: string;
 }
-
-export interface MemberVehicleListParams extends PaginationParams {
-  member_id?: string | null;
-  vehicle_type_id?: string | null;
-}
-
-export type MemberVehiclePage = Page<MemberVehicleRead>;
 
 // ---------------------------------------------------------------------------
 // Subscription Plan
@@ -323,6 +304,14 @@ export type SubscriptionPlanPage = Page<SubscriptionPlanRead>;
 // ---------------------------------------------------------------------------
 // Member Subscription
 // ---------------------------------------------------------------------------
+
+export interface MemberSubscriptionBrief {
+  id: string;
+  plan: PlanBrief;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
 
 export interface MemberSubscriptionCreate {
   member_id: string;

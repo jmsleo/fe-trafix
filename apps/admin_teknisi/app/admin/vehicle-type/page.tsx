@@ -8,6 +8,7 @@ import {
   useUpdateVehicleType,
   useVehicleTypes,
 } from '@/hooks/useVehicleTypes';
+import { getApiErrorMessage } from '@/lib/api/errors';
 import type { ActiveStatus, VehicleTypeRead } from '@/lib/api/types';
 
 interface VehicleTypeForm {
@@ -114,13 +115,13 @@ export default function VehicleTypePage() {
         { id: idYangDiedit, data: payload },
         {
           onSuccess: onSettled,
-          onError: () => setFormError('Gagal menyimpan perubahan. Coba lagi.'),
+          onError: (error) => setFormError(getApiErrorMessage(error, 'Gagal menyimpan perubahan. Coba lagi.')),
         },
       );
     } else {
       createVehicle.mutate(payload, {
         onSuccess: onSettled,
-        onError: () => setFormError('Gagal menyimpan kendaraan. Coba lagi.'),
+        onError: (error) => setFormError(getApiErrorMessage(error, 'Gagal menyimpan kendaraan. Coba lagi.')),
       });
     }
   };
