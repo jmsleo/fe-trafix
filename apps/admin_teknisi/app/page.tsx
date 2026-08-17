@@ -3,10 +3,10 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Poppins } from 'next/font/google';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Button from '@/app/components/ui/Button';
 import InputField from '@/app/components/ui/InputField';
-import { useLogin } from '@/hooks/useAuth';
+import { useLogin, useMe } from '@/hooks/useAuth';
 import { AxiosError } from 'axios';
 
 const poppins = Poppins({
@@ -17,9 +17,16 @@ const poppins = Poppins({
 export default function LoginPage() {
   const router = useRouter();
   const login = useLogin();
+  const { data: me, isLoading: meLoading } = useMe();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!meLoading && me) {
+      router.push('/admin/tarif-parkir');
+    }
+  }, [meLoading, me, router]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -4,9 +4,10 @@ interface HeaderProps {
   title: string;
   userName: string;
   userRole: string;
+  onLogout?: () => void;
 }
 
-export default function Header({ title, userName, userRole }: HeaderProps) {
+export default function Header({ title, userName, userRole, onLogout }: HeaderProps) {
   return (
     <header className="flex items-center justify-between pb-5 border-b-[2px] border-[#BF8F51]">
       
@@ -37,7 +38,10 @@ export default function Header({ title, userName, userRole }: HeaderProps) {
         </div>
         
         {/* Ikon Logout */}
-        <button className="text-[#BF8F51] hover:opacity-80 transition-opacity ml-1">
+        <button
+          onClick={onLogout}
+          className="text-[#BF8F51] hover:opacity-80 transition-opacity ml-1"
+        >
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
