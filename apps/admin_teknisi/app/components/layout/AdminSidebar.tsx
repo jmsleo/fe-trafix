@@ -8,8 +8,8 @@ import Image from 'next/image';
 export default function AdminSidebar() {
   const pathname = usePathname();
   
-  // State untuk mengontrol Accordion khusus menu "Member"
-  const [isMemberOpen, setIsMemberOpen] = useState(false);
+  // State untuk mengontrol Accordion dropdown menu (menyimpan index menu yang terbuka)
+  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
 
   const adminMenus = [
     { 
@@ -54,7 +54,30 @@ export default function AdminSidebar() {
     { 
       name: 'Signage Management', 
       path: '/admin/signage-management',
-      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V2"/><path d="M6 6h12"/><rect x="8" y="6" width="8" height="6" rx="1"/></svg>
+      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V2"/><path d="M6 6h12"/><rect x="8" y="6" width="8" height="6" rx="1"/></svg>,
+      hasDropdown: true,
+      subMenus: [
+        {
+          name: 'Daftar Signage',
+          path: '/admin/signage-management',
+          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V2"/><path d="M6 6h12"/><rect x="8" y="6" width="8" height="6" rx="1"/></svg>
+        },
+        {
+          name: 'Konten Signage',
+          path: '/admin/signage-management/konten-signage',
+          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        },
+        {
+          name: 'Assignments',
+          path: '/admin/signage-management/assignments',
+          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M21 3l-7 7"/><path d="M3 3l7 7"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/><path d="M21 21l-7-7"/><path d="M3 21l7-7"/></svg>
+        },
+        {
+          name: 'Jadwal Signage',
+          path: '/admin/signage-management/jadwal-signage',
+          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        }
+      ]
     },
     { 
       name: 'Backup Database', 
@@ -100,9 +123,8 @@ export default function AdminSidebar() {
       <nav className="bg-[#231F1A] rounded-[10px] p-4 space-y-2 h-[874px] overflow-y-auto shadow-xl">
         {adminMenus.map((menu, index) => {
           
-          // Cek apakah menu ini sedang aktif
-          // Khusus "Member", dianggap aktif jika pathname mengandung kata '/admin/member'
           const isActive = pathname.includes(menu.path);
+          const isDropdownOpen = menu.hasDropdown && openDropdownIndex === index;
 
           return (
             <div key={index} className="flex flex-col">
@@ -111,7 +133,7 @@ export default function AdminSidebar() {
               {menu.hasDropdown ? (
                 // Jika punya dropdown (Member), gunakan <button> agar bisa dibuka-tutup
                 <button 
-                  onClick={() => setIsMemberOpen(!isMemberOpen)}
+                  onClick={() => setOpenDropdownIndex(isDropdownOpen ? null : index)}
                   className={`
                     flex items-center justify-between px-4 py-3 rounded-[7px] transition-all
                     ${isActive 
@@ -128,7 +150,7 @@ export default function AdminSidebar() {
                       {menu.name}
                     </span>
                   </div>
-                  <span className={`transition-transform duration-300 ${isMemberOpen ? 'rotate-180' : ''} ${isActive ? 'text-[#B5884D]' : 'text-gray-400'}`}>
+                  <span className={`transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''} ${isActive ? 'text-[#B5884D]' : 'text-gray-400'}`}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
@@ -158,7 +180,7 @@ export default function AdminSidebar() {
               )}
 
               {/* AREA SUB-MENU (DROPDOWN) */}
-              {menu.hasDropdown && isMemberOpen && (
+              {menu.hasDropdown && isDropdownOpen && (
                 <div className="mt-2 ml-4 flex flex-col space-y-1 pl-2 border-l border-[#B5884D]/30 animate-in fade-in slide-in-from-top-2 duration-200">
                   {menu.subMenus?.map((subMenu, subIndex) => {
                     const isSubActive = pathname === subMenu.path;
