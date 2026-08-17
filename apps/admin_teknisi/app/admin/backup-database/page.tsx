@@ -53,7 +53,7 @@ export default function BackupDatabasePage() {
   const total = data?.total ?? 0;
   const totalPages = data?.total_pages ?? 1;
 
-  const runningBackup = items.find((b) => b.status === 'running');
+  const runningBackup = items.find((b) => b.status === 'running' && (b.progress ?? 0) < 100);
   const lastSuccessful = items.find((b) => b.status === 'completed');
 
   const [confirmRestore, setConfirmRestore] = useState<BackupRead | null>(null);

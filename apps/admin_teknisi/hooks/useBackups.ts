@@ -22,6 +22,7 @@ export function useBackups(params?: BackupListParams) {
   return useQuery({
     queryKey: backupKeys.list(params),
     queryFn: () => listBackups(params),
+    refetchInterval: 5000,
   });
 }
 
