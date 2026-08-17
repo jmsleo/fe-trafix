@@ -1,26 +1,29 @@
 'use client';
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useSyncExternalStore } from 'react';
 import AdminSidebar from '../components/layout/AdminSidebar';
 import Header from '../components/layout/Header';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMe, useLogout, useAuthEvents } from '@/hooks/useAuth';
+
+const emptySubscribe = () => () => {};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: me, isLoading } = useMe();
   const logout = useLogout();
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   useAuthEvents(useCallback(() => {
     router.push('/');
   }, [router]));
 
   useEffect(() => {
-    if (!isLoading && !me) {
+    if (mounted && !isLoading && !me) {
       router.push('/');
     }
-  }, [isLoading, me, router]);
+  }, [mounted, isLoading, me, router]);
 
   const getPageTitle = () => {
     if (pathname.includes('/tarif-parkir')) return 'Dashboard Admin';
@@ -33,7 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     });
   }, [logout, router]);
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="flex min-h-screen bg-[#17130E] items-center justify-center">
         <p className="text-[#B5884D] text-sm">Memuat...</p>
