@@ -1,9 +1,193 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuditLogs } from '@/hooks/useAuditLogs';
-import type { AuditLogRead } from '@/lib/api/types';
+import { useAuditLogs, useAuditCleanupConfig, useUpdateAuditCleanupConfig } from '@/hooks/useAuditLogs';
+import type { AuditCleanupConfig, AuditLogRead } from '@/lib/api/types';
 import { getApiErrorMessage } from '@/lib/api/errors';
+
+const WEEKDAYS = [
+  { value: 0, label: 'Senin' },
+  { value: 1, label: 'Selasa' },
+  { value: 2, label: 'Rabu' },
+  { value: 3, label: 'Kamis' },
+  { value: 4, label: 'Jumat' },
+  { value: 5, label: 'Sabtu' },
+  { value: 6, label: 'Minggu' },
+];
+
+function AuditCleanupCard() {
+  const { data, isLoading } = useAuditCleanupConfig();
+  const updateCleanup = useUpdateAuditCleanupConfig();
+
+  if (isLoading || !data) {
+    return (
+      <div className="bg-[#231F1A]/80 border border-[#B5884D]/30 rounded-[12px] p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B5884D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          </svg>
+          <h2 className="text-[22px] font-bold text-[#EAE1D8] tracking-wide">Auto Hapus Audit Log</h2>
+        </div>
+        <p className="text-sm text-gray-500">Memuat pengaturan...</p>
+      </div>
+    );
+  }
+
+  return (
+    <AuditCleanupCardForm
+      key={`${data.enabled}-${data.weekday}-${data.time}-${data.timezone}`}
+      data={data}
+      updateCleanup={updateCleanup}
+    />
+  );
+}
+
+function AuditCleanupCardForm({
+  data,
+  updateCleanup,
+}: {
+  data: AuditCleanupConfig;
+  updateCleanup: ReturnType<typeof useUpdateAuditCleanupConfig>;
+}) {
+  const [enabled, setEnabled] = useState(data.enabled);
+  const [weekday, setWeekday] = useState(data.weekday);
+  const [time, setTime] = useState(data.time);
+  const [timezone, setTimezone] = useState(data.timezone);
+
+  const persist = useCallback(
+    (next: Partial<AuditCleanupConfig>) => {
+      updateCleanup.mutate(
+        {
+          enabled: next.enabled ?? enabled,
+          weekday: next.weekday ?? weekday,
+          time: next.time ?? time,
+          timezone: next.timezone ?? timezone,
+        },
+        {
+          onError: (err) =>
+            alert(getApiErrorMessage(err, 'Gagal menyimpan pengaturan auto hapus audit log')),
+        },
+      );
+    },
+    [enabled, weekday, time, timezone, updateCleanup],
+  );
+
+  const handleToggle = useCallback(() => {
+    const next = !enabled;
+    setEnabled(next);
+    persist({ enabled: next });
+  }, [enabled, persist]);
+
+  const handleWeekdayChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const next = Number(e.target.value);
+      setWeekday(next);
+      persist({ weekday: next });
+    },
+    [persist],
+  );
+
+  const handleTimeBlur = useCallback(() => {
+    if (time) persist({ time });
+  }, [time, persist]);
+
+  const handleTimezoneBlur = useCallback(() => {
+    if (timezone) persist({ timezone });
+  }, [timezone, persist]);
+
+  const dayLabel = WEEKDAYS.find((d) => d.value === weekday)?.label ?? `Hari ${weekday}`;
+
+  return (
+    <div className="bg-[#231F1A]/80 border border-[#B5884D]/30 rounded-[12px] p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B5884D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          </svg>
+          <div>
+            <h2 className="text-[22px] font-bold text-[#EAE1D8] tracking-wide">Auto Hapus Audit Log</h2>
+            <p className="text-[13px] text-gray-400 mt-0.5">Menghapus seluruh audit log secara terjadwal</p>
+          </div>
+        </div>
+        <button
+          onClick={handleToggle}
+          disabled={updateCleanup.isPending}
+          role="switch"
+          aria-checked={enabled}
+          title={enabled ? 'Nonaktifkan auto hapus audit log' : 'Aktifkan auto hapus audit log'}
+          className={`relative w-[56px] h-[30px] rounded-full transition-colors shrink-0 disabled:opacity-50 ${
+            enabled ? 'bg-[#B5884D] shadow-[0_0_12px_rgba(181,136,77,0.5)]' : 'bg-black/60 border border-[#B5884D]/40'
+          }`}
+        >
+          <span
+            className={`absolute top-[3px] w-[24px] h-[24px] rounded-full bg-[#EAE1D8] transition-all ${
+              enabled ? 'left-[29px]' : 'left-[3px]'
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div>
+          <label className="block text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            Hari
+          </label>
+          <div className="relative">
+            <select
+              value={weekday}
+              disabled={!enabled}
+              onChange={handleWeekdayChange}
+              className="w-full appearance-none px-4 py-2.5 pr-10 text-sm bg-black/40 border border-[#B5884D]/50 rounded-[8px] text-[#EAE1D8] focus:border-[#B5884D] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {WEEKDAYS.map((d) => (
+                <option key={d.value} value={d.value} className="bg-[#231F1A]">{d.label}</option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-[#B5884D]">▼</div>
+          </div>
+        </div>
+        <div>
+          <label className="block text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            Waktu
+          </label>
+          <input
+            type="time"
+            value={time}
+            disabled={!enabled}
+            onChange={(e) => setTime(e.target.value)}
+            onBlur={handleTimeBlur}
+            className="w-full bg-black/40 border border-[#B5884D]/50 rounded-[8px] px-4 py-2.5 text-[#EAE1D8] text-sm focus:border-[#B5884D] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:dark]"
+          />
+        </div>
+        <div>
+          <label className="block text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            Zona Waktu
+          </label>
+          <input
+            type="text"
+            value={timezone}
+            disabled={!enabled}
+            onChange={(e) => setTimezone(e.target.value)}
+            onBlur={handleTimezoneBlur}
+            placeholder="Asia/Jakarta"
+            className="w-full bg-black/40 border border-[#B5884D]/50 rounded-[8px] px-4 py-2.5 text-[#EAE1D8] text-sm focus:border-[#B5884D] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+        </div>
+      </div>
+
+      <p className="text-[13px] text-gray-400 mt-5">
+        {enabled
+          ? `Semua audit log akan dihapus setiap hari ${dayLabel} pukul ${time || '23:59'} (${timezone || 'Asia/Jakarta'} / WIB).`
+          : 'Auto hapus audit log saat ini nonaktif.'}
+        {updateCleanup.isPending && <span className="text-[#B5884D]"> Menyimpan...</span>}
+      </p>
+    </div>
+  );
+}
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -212,6 +396,9 @@ export default function AuditLogPage() {
           />
         </div>
       </div>
+
+      {/* Auto Cleanup */}
+      <AuditCleanupCard />
 
       {/* Table */}
       <div className="rounded-[10px] border border-[#B5884D] overflow-hidden shadow-lg bg-transparent w-full flex flex-col">

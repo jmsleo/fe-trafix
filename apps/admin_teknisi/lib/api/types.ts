@@ -615,6 +615,12 @@ export interface BackupRestoreRequest {
   confirm?: boolean;
 }
 
+export interface AutoBackupConfig {
+  enabled: boolean;
+  time: string;
+  timezone: string;
+}
+
 // ---------------------------------------------------------------------------
 // Audit Log
 // ---------------------------------------------------------------------------
@@ -638,6 +644,13 @@ export interface AuditLogListParams extends DateRangeParams {
 }
 
 export type AuditLogPage = Page<AuditLogRead>;
+
+export interface AuditCleanupConfig {
+  enabled: boolean;
+  weekday: number;
+  time: string;
+  timezone: string;
+}
 
 // ---------------------------------------------------------------------------
 // Gate

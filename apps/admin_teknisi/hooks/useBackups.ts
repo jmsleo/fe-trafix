@@ -5,17 +5,20 @@ import {
   createBackup,
   deleteBackup,
   downloadBackup,
+  getAutoBackupConfig,
   getBackup,
   listBackups,
   restoreBackup,
+  updateAutoBackupConfig,
   uploadBackup,
 } from '@/lib/api/backups';
-import type { BackupListParams, BackupRestoreRequest } from '@/lib/api/types';
+import type { AutoBackupConfig, BackupListParams, BackupRestoreRequest } from '@/lib/api/types';
 
 export const backupKeys = {
   all: ['backups'] as const,
   list: (params?: BackupListParams) => [...backupKeys.all, 'list', params] as const,
   detail: (id: string) => [...backupKeys.all, 'detail', id] as const,
+  autoBackup: ['backups', 'auto-backup'] as const,
 };
 
 export function useBackups(params?: BackupListParams) {
@@ -31,6 +34,22 @@ export function useBackup(id: string) {
     queryKey: backupKeys.detail(id),
     queryFn: () => getBackup(id),
     enabled: !!id,
+  });
+}
+
+export function useAutoBackupConfig() {
+  return useQuery({
+    queryKey: backupKeys.autoBackup,
+    queryFn: getAutoBackupConfig,
+  });
+}
+
+export function useUpdateAutoBackupConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: AutoBackupConfig) => updateAutoBackupConfig(data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: backupKeys.autoBackup }),
   });
 }
 

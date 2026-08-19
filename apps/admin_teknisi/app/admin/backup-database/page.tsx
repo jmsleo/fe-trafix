@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
-import { useBackups, useCreateBackup, useDeleteBackup, useDownloadBackup, useRestoreBackup, useUploadBackup } from '@/hooks/useBackups';
-import type { BackupRead } from '@/lib/api/types';
+import { useBackups, useAutoBackupConfig, useUpdateAutoBackupConfig, useCreateBackup, useDeleteBackup, useDownloadBackup, useRestoreBackup, useUploadBackup } from '@/hooks/useBackups';
+import type { AutoBackupConfig, BackupRead } from '@/lib/api/types';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
 function formatBytes(bytes: number): string {
@@ -36,6 +36,147 @@ function formatRelative(iso: string | null): string {
   if (diffH < 24) return `${diffH} jam lalu`;
   const diffD = Math.floor(diffH / 24);
   return `${diffD} hari lalu`;
+}
+
+function AutoBackupCard() {
+  const { data, isLoading } = useAutoBackupConfig();
+  const updateAuto = useUpdateAutoBackupConfig();
+
+  if (isLoading || !data) {
+    return (
+      <div className="bg-[#231F1A]/80 border border-[#B5884D]/30 rounded-[12px] p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B5884D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <h2 className="text-[22px] font-bold text-[#EAE1D8] tracking-wide">Auto Backup</h2>
+        </div>
+        <p className="text-sm text-gray-500">Memuat pengaturan...</p>
+      </div>
+    );
+  }
+
+  return (
+    <AutoBackupCardForm
+      key={`${data.enabled}-${data.time}-${data.timezone}`}
+      data={data}
+      updateAuto={updateAuto}
+    />
+  );
+}
+
+function AutoBackupCardForm({
+  data,
+  updateAuto,
+}: {
+  data: AutoBackupConfig;
+  updateAuto: ReturnType<typeof useUpdateAutoBackupConfig>;
+}) {
+  const [enabled, setEnabled] = useState(data.enabled);
+  const [time, setTime] = useState(data.time);
+  const [timezone, setTimezone] = useState(data.timezone);
+
+  const persist = useCallback(
+    (next: { enabled?: boolean; time?: string; timezone?: string }) => {
+      updateAuto.mutate(
+        {
+          enabled: next.enabled ?? enabled,
+          time: next.time ?? time,
+          timezone: next.timezone ?? timezone,
+        },
+        {
+          onError: (err) =>
+            alert(getApiErrorMessage(err, 'Gagal menyimpan pengaturan auto backup')),
+        },
+      );
+    },
+    [enabled, time, timezone, updateAuto],
+  );
+
+  const handleToggle = useCallback(() => {
+    const next = !enabled;
+    setEnabled(next);
+    persist({ enabled: next });
+  }, [enabled, persist]);
+
+  const handleTimeBlur = useCallback(() => {
+    if (time) persist({ time });
+  }, [time, persist]);
+
+  const handleTimezoneBlur = useCallback(() => {
+    if (timezone) persist({ timezone });
+  }, [timezone, persist]);
+
+  return (
+    <div className="bg-[#231F1A]/80 border border-[#B5884D]/30 rounded-[12px] p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B5884D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <div>
+            <h2 className="text-[22px] font-bold text-[#EAE1D8] tracking-wide">Auto Backup</h2>
+            <p className="text-[13px] text-gray-400 mt-0.5">Backup database otomatis setiap hari</p>
+          </div>
+        </div>
+        <button
+          onClick={handleToggle}
+          disabled={updateAuto.isPending}
+          role="switch"
+          aria-checked={enabled}
+          title={enabled ? 'Nonaktifkan auto backup' : 'Aktifkan auto backup'}
+          className={`relative w-[56px] h-[30px] rounded-full transition-colors shrink-0 disabled:opacity-50 ${
+            enabled ? 'bg-[#B5884D] shadow-[0_0_12px_rgba(181,136,77,0.5)]' : 'bg-black/60 border border-[#B5884D]/40'
+          }`}
+        >
+          <span
+            className={`absolute top-[3px] w-[24px] h-[24px] rounded-full bg-[#EAE1D8] transition-all ${
+              enabled ? 'left-[29px]' : 'left-[3px]'
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label className="block text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            Waktu Backup
+          </label>
+          <input
+            type="time"
+            value={time}
+            disabled={!enabled}
+            onChange={(e) => setTime(e.target.value)}
+            onBlur={handleTimeBlur}
+            className="w-full bg-black/40 border border-[#B5884D]/50 rounded-[8px] px-4 py-2.5 text-[#EAE1D8] text-sm focus:border-[#B5884D] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:dark]"
+          />
+        </div>
+        <div>
+          <label className="block text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+            Zona Waktu
+          </label>
+          <input
+            type="text"
+            value={timezone}
+            disabled={!enabled}
+            onChange={(e) => setTimezone(e.target.value)}
+            onBlur={handleTimezoneBlur}
+            placeholder="Asia/Jakarta"
+            className="w-full bg-black/40 border border-[#B5884D]/50 rounded-[8px] px-4 py-2.5 text-[#EAE1D8] text-sm focus:border-[#B5884D] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+        </div>
+      </div>
+
+      <p className="text-[13px] text-gray-400 mt-5">
+        {enabled
+          ? `Backup dijalankan setiap hari pukul ${time || '00:00'} (${timezone || 'Asia/Jakarta'} / WIB).`
+          : 'Auto backup saat ini nonaktif.'}
+        {updateAuto.isPending && <span className="text-[#B5884D]"> Menyimpan...</span>}
+      </p>
+    </div>
+  );
 }
 
 export default function BackupDatabasePage() {
@@ -269,6 +410,9 @@ export default function BackupDatabasePage() {
           </div>
         </div>
       </div>
+
+      {/* Auto Backup */}
+      <AutoBackupCard />
 
       {/* Histori Backup Table */}
       <div className="rounded-[10px] border border-[#B5884D] overflow-hidden shadow-lg bg-transparent w-full flex flex-col mt-4">

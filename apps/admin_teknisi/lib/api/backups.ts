@@ -1,5 +1,6 @@
 import { apiClient, requestDownload } from './client';
 import type {
+  AutoBackupConfig,
   BackupListParams,
   BackupPage,
   BackupRead,
@@ -8,6 +9,18 @@ import type {
 
 export async function listBackups(params?: BackupListParams): Promise<BackupPage> {
   const response = await apiClient.get<BackupPage>('/backups/', { params });
+  return response.data;
+}
+
+export async function getAutoBackupConfig(): Promise<AutoBackupConfig> {
+  const response = await apiClient.get<AutoBackupConfig>('/backups/auto-backup');
+  return response.data;
+}
+
+export async function updateAutoBackupConfig(
+  data: AutoBackupConfig,
+): Promise<AutoBackupConfig> {
+  const response = await apiClient.put<AutoBackupConfig>('/backups/auto-backup', data);
   return response.data;
 }
 

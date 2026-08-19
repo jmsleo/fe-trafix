@@ -1,13 +1,19 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { getAuditLog, listAuditLogs } from '@/lib/api/auditLogs';
-import type { AuditLogListParams } from '@/lib/api/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  getAuditCleanupConfig,
+  getAuditLog,
+  listAuditLogs,
+  updateAuditCleanupConfig,
+} from '@/lib/api/auditLogs';
+import type { AuditCleanupConfig, AuditLogListParams } from '@/lib/api/types';
 
 export const auditLogKeys = {
   all: ['audit-logs'] as const,
   list: (params?: AuditLogListParams) => [...auditLogKeys.all, 'list', params] as const,
   detail: (id: string) => [...auditLogKeys.all, 'detail', id] as const,
+  cleanupConfig: ['audit-logs', 'cleanup-config'] as const,
 };
 
 export function useAuditLogs(params?: AuditLogListParams) {
@@ -22,5 +28,21 @@ export function useAuditLog(id: string) {
     queryKey: auditLogKeys.detail(id),
     queryFn: () => getAuditLog(id),
     enabled: !!id,
+  });
+}
+
+export function useAuditCleanupConfig() {
+  return useQuery({
+    queryKey: auditLogKeys.cleanupConfig,
+    queryFn: getAuditCleanupConfig,
+  });
+}
+
+export function useUpdateAuditCleanupConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: AuditCleanupConfig) => updateAuditCleanupConfig(data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: auditLogKeys.cleanupConfig }),
   });
 }
