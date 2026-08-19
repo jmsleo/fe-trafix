@@ -8,7 +8,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const Button: React.FC<ButtonProps> = ({ children, className, ...props }) => {
   // === GAYA TAILWIND HASIL SLICING DARI FIGMA ===
   // Kita buat gaya gradien emas yang sudah pixel-perfect
-  let buttonClasses = "flex items-center justify-center gap-[6px] h-[44px] px-6 rounded-[9px] font-medium transition-opacity shrink-0 bg-gradient-to-r from-[#BF8F51] to-[#523D22] border border-[#BF8F51] text-[#17130E] shadow-lg hover:opacity-90";
+  const buttonClasses = "flex items-center justify-center gap-[6px] h-[44px] px-6 rounded-[9px] font-medium transition-opacity shrink-0 bg-gradient-to-r from-[#BF8F51] to-[#523D22] border border-[#BF8F51] text-[#17130E] shadow-lg hover:opacity-90";
   // ===========================================
 
   return (

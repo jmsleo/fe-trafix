@@ -14,6 +14,16 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
 });
 
+function homePathFor(role?: string): string {
+  switch (role) {
+    case 'teknisi':
+      return '/teknisi/dashboard';
+    case 'admin':
+    default:
+      return '/admin/tarif-parkir';
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const login = useLogin();
@@ -24,7 +34,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!meLoading && me) {
-      router.push('/admin/tarif-parkir');
+      router.push(homePathFor(me.role));
     }
   }, [meLoading, me, router]);
 
@@ -40,9 +50,6 @@ export default function LoginPage() {
     login.mutate(
       { username, password },
       {
-        onSuccess: () => {
-          router.push('/admin/tarif-parkir');
-        },
         onError: (err) => {
           const axiosError = err as AxiosError<{ detail?: string }>;
           setError(

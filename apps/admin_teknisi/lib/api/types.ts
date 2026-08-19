@@ -638,3 +638,293 @@ export interface AuditLogListParams extends DateRangeParams {
 }
 
 export type AuditLogPage = Page<AuditLogRead>;
+
+// ---------------------------------------------------------------------------
+// Gate
+// ---------------------------------------------------------------------------
+
+export type GateType = 'gate_in' | 'gate_out';
+export type GateStatus = 'online' | 'offline';
+
+export interface GateCreate {
+  name: string;
+  gate_code?: string | null;
+  type: GateType;
+  status: GateStatus;
+}
+
+export interface GateUpdate {
+  name?: string | null;
+  gate_code?: string | null;
+  type?: GateType | null;
+  status?: GateStatus | null;
+}
+
+export interface GateRead {
+  id: string;
+  name: string;
+  gate_code?: string | null;
+  type: GateType;
+  status: GateStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GateListParams extends PaginationParams {
+  search?: string | null;
+  type?: GateType | null;
+}
+
+export type GatePage = Page<GateRead>;
+
+// ---------------------------------------------------------------------------
+// Gate health (live monitoring)
+// ---------------------------------------------------------------------------
+
+export interface GateHealthEntry {
+  gate_code: string;
+  is_online: boolean;
+  connection_type: 'mqtt' | 'tcp' | 'both' | string;
+  last_heartbeat_at?: number | null;
+  last_input_at?: number | null;
+  sensor_states: Record<string, boolean>;
+  relay_states: Record<string, boolean>;
+  firmware_version?: string | null;
+  total_heartbeats: number;
+  total_inputs: number;
+}
+
+// ---------------------------------------------------------------------------
+// Device
+// ---------------------------------------------------------------------------
+
+export type DeviceStatus = 'online' | 'offline' | 'trouble';
+export type DeviceKind = 'controller' | 'lpr' | 'camera' | 'reader' | 'signage' | 'other';
+
+export interface DeviceCreate {
+  gate_id: string;
+  name: string;
+  type: string;
+  ip_address: string;
+  config?: Record<string, unknown> | null;
+  status?: DeviceStatus;
+}
+
+export interface DeviceUpdate {
+  gate_id?: string | null;
+  name?: string | null;
+  type?: string | null;
+  ip_address?: string | null;
+  config?: Record<string, unknown> | null;
+  status?: DeviceStatus | null;
+}
+
+export interface DeviceRead {
+  id: string;
+  gate_id: string;
+  name: string;
+  type: string;
+  ip_address: string;
+  config?: Record<string, unknown> | null;
+  status: DeviceStatus;
+  last_heartbeat?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeviceListParams extends PaginationParams {
+  search?: string | null;
+  type?: string | null;
+  gate_id?: string | null;
+}
+
+export type DevicePage = Page<DeviceRead>;
+
+// ---------------------------------------------------------------------------
+// Monitoring: consolidated live device list
+// ---------------------------------------------------------------------------
+
+export interface DeviceMonitorItem {
+  id: string;
+  name: string;
+  type: string;
+  kind: DeviceKind;
+  ip_address: string;
+  gate_id: string;
+  gate_code?: string | null;
+  gate_name?: string | null;
+  config: Record<string, unknown>;
+  status: DeviceStatus;
+  last_heartbeat?: string | null;
+  registry: Record<string, unknown>;
+  connection_type?: string;
+  sensors?: Record<string, boolean>;
+  relays?: Record<string, boolean>;
+  firmware?: string | null;
+  signage_status?: string;
+  probe?: { reachable: boolean; latency_ms?: number | null; status_code?: number | null; detail?: string } | null;
+}
+
+export interface DeviceMonitorListParams extends PaginationParams {
+  search?: string | null;
+  type?: string | null;
+  kind?: DeviceKind | null;
+  gate_code?: string | null;
+  status?: DeviceStatus | null;
+  probe?: boolean;
+}
+
+export interface DeviceMonitorPage {
+  items: DeviceMonitorItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  last_updated: string;
+}
+
+export interface MonitoringSnapshot {
+  devices: DeviceMonitorPage;
+  mqtt: MonitoringMqtt;
+}
+
+// ---------------------------------------------------------------------------
+// System / MQTT
+// ---------------------------------------------------------------------------
+
+export interface MqttStatus {
+  connected: boolean;
+  host?: string;
+  port?: number;
+  uptime_seconds?: number | null;
+  reconnect_count?: number;
+  disconnect_count?: number;
+  last_connect_at?: number | null;
+  last_disconnect_at?: number | null;
+}
+
+export interface TcpConnectionInfo {
+  gate_code: string;
+  host: string;
+  port: number;
+  connected: boolean;
+  last_rx_at?: number;
+  heartbeat_fail_streak?: number;
+}
+
+export interface TcpStatus {
+  enabled: boolean;
+  connected_gates: number;
+  total_gates: number;
+  connections: TcpConnectionInfo[];
+}
+
+export interface SystemHealth {
+  status: string;
+  uptime_seconds: number;
+  mqtt: MqttStatus;
+  tcp: { connected_gates: number; total_gates: number };
+  gates_online?: number;
+  gates_offline?: number;
+  gates_total?: number;
+}
+
+export interface MonitoringMqtt {
+  mqtt: MqttStatus;
+  tcp: TcpStatus;
+}
+
+export interface MqttConfig {
+  host: string;
+  port: number;
+  keepalive: number;
+  username?: string | null;
+  password?: string | null;
+  client_id_prefix: string;
+}
+
+export type MqttConfigUpdate = MqttConfig;
+
+// ---------------------------------------------------------------------------
+// Monitoring: signage display, reader events, device log
+// ---------------------------------------------------------------------------
+
+export interface SignageDisplayStatus {
+  gate_code: string;
+  status: string;
+  plate_number?: string;
+  transaction_code?: string;
+  ads_count: number;
+  media_count: number;
+  has_idle_image: boolean;
+  last_updated: string;
+}
+
+export interface ReaderEvent {
+  id: string;
+  ts: string;
+  gate?: string | null;
+  source: string;
+  detail?: string | null;
+}
+
+export interface ReaderEventPage {
+  events: ReaderEvent[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface DeviceLogEntry {
+  id: string;
+  ts: string;
+  gate?: string | null;
+  source: string;
+  method?: string | null;
+  ticket_number?: string | null;
+  detail?: string | null;
+}
+
+export interface DeviceLogPage {
+  events: DeviceLogEntry[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface DeviceLogParams extends PaginationParams {
+  gate?: string | null;
+  source?: string | null;
+  method?: string | null;
+  date_from?: string | null;
+  date_to?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Test connection / restart
+// ---------------------------------------------------------------------------
+
+export interface TestResult {
+  device_id: string;
+  name: string;
+  type: string;
+  kind: DeviceKind;
+  status: DeviceStatus;
+  reachable: boolean;
+  detail?: string;
+  latency_ms?: number | null;
+  status_code?: number | null;
+}
+
+export type RestartResultStatus = 'restarted' | 'failed' | 'not_supported';
+
+export interface RestartResult {
+  device_id: string;
+  name: string;
+  type: string;
+  kind: DeviceKind;
+  status: RestartResultStatus;
+  detail?: string;
+}
