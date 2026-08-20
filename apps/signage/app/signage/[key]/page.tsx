@@ -284,11 +284,15 @@ export default function SignageDisplayPage() {
 }
 
 function Clock() {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const t = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(t);
   }, []);
+  if (now === null) {
+    return <div className="font-mono text-sm font-semibold tracking-widest text-gold-light" />;
+  }
   return (
     <div className="font-mono text-sm font-semibold tracking-widest text-gold-light">
       {fmtTime(now)}

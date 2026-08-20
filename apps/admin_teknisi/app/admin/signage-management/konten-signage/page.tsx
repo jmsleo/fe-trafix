@@ -121,7 +121,8 @@ export default function KontenSignagePage() {
       body: content.body ?? '',
     });
     setSelectedFile(null);
-    setPreviewUrl(null);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    setPreviewUrl(content.file_path ? `${apiUrl}/signages/contents/${content.id}/file` : null);
     setFormError(null);
     setIsModalOpen(true);
   };
