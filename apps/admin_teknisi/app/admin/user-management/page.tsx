@@ -126,12 +126,28 @@ export default function UserManagementPage() {
           setIsSaving(false);
           return;
         }
+        const password = formData.password.trim();
+        if (password.length < 8) {
+          setFormError('Password minimal 8 karakter.');
+          setIsSaving(false);
+          return;
+        }
+        if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+          setFormError('Password harus mengandung huruf besar, huruf kecil, dan angka.');
+          setIsSaving(false);
+          return;
+        }
+        if (password.toLowerCase() === formData.username.trim().toLowerCase()) {
+          setFormError('Password tidak boleh sama dengan username.');
+          setIsSaving(false);
+          return;
+        }
         await createUserMutation.mutateAsync({
           name: formData.name.trim(),
           username: formData.username.trim(),
           role: formData.role,
           status: 'active',
-          password: formData.password.trim(),
+          password,
         });
       }
       setIsModalOpen(false);
@@ -386,6 +402,11 @@ export default function UserManagementPage() {
                   placeholder={idYangDiedit ? '••••••••' : 'Masukkan password'}
                   className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]"
                 />
+                {!idYangDiedit && (
+                  <p className="text-[11px] text-gray-500 leading-snug">
+                    Minimal 8 karakter, mengandung huruf besar, huruf kecil, dan angka.
+                  </p>
+                )}
               </div>
 
               {formError && <p className="text-sm text-[#FF5656]">{formError}</p>}
