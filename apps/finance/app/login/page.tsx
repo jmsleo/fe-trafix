@@ -1,44 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLogin, useMe } from '@/hooks/useAuth';
+import { getApiErrorMessage } from '@/lib/api/errors';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const login = useLogin();
+  const { data: me, isLoading: meLoading } = useMe();
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [shift, setShift] = useState('1');
-  
-  // State untuk menampilkan UI Error
-  const [showError, setShowError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!meLoading && me) {
+      router.replace('/finance/dashboard');
+    }
+  }, [meLoading, me, router]);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Simulasi memunculkan error jika kosong atau salah (untuk tes UI Slicing)
-    if (!username || !password || username !== 'admin') {
-      setShowError(true);
+    setError(null);
+
+    if (!username.trim() || !password) {
+      setError('Username dan kata sandi wajib diisi.');
       return;
     }
-    
-    setShowError(false);
-    console.log({ username, password, shift });
+
+    setSubmitting(true);
+    try {
+      await login.mutateAsync({ username, password });
+      router.replace('/finance/dashboard');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 403) {
+        setError('Akun ini bukan finance. Gunakan akun finance untuk masuk.');
+      } else {
+        setError(getApiErrorMessage(err, 'Login gagal, silakan periksa Username dan kata sandi Anda.'));
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#0a0908] flex items-center justify-center p-6 font-sans">
       <div className="w-full max-w-[1100px] flex flex-col md:flex-row items-center justify-between gap-12 md:gap-8">
-        
+
         {/* --- Bagian Kiri: Logo & Tagline --- */}
         <div className="flex items-center gap-4">
-          <img 
-            src="/image/logo-fp.svg" 
-            alt="Fix Parking Logo" 
+          <img
+            src="/image/logo-fp.svg"
+            alt="Fix Parking Logo"
             className="w-[88px] h-[88px] object-cover rounded-xl"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/88x88/B5884D/17130E?text=P';
             }}
           />
           <div className="flex flex-col justify-center">
-            <h1 
+            <h1
               className="font-extrabold text-[#FFF4E5] tracking-wide text-[52px] leading-none mb-1"
               style={{
                 fontFamily: "'Rubik', sans-serif",
@@ -55,10 +78,10 @@ export default function LoginPage() {
 
         {/* --- Bagian Kanan: Form Login --- */}
         <div className="w-full max-w-[526px] relative flex justify-center">
-          
+
           {/* Card Form */}
-          <div 
-            className="relative rounded-[24px] px-10 py-12 flex flex-col justify-center w-full h-[595px]"
+          <div
+            className="relative rounded-[24px] px-10 py-12 flex flex-col justify-center w-full h-auto"
             style={{
               background: 'conic-gradient(from 80deg at 50% 82%, rgba(35, 31, 26, 0.5) 13%, rgba(191, 143, 81, 0.5) 63%, rgba(35, 31, 26, 0.5) 100%)',
               boxShadow: '15px 15px 40px rgba(191, 143, 81, 0.25), 30px 30px 80px rgba(191, 143, 81, 0.15)',
@@ -87,9 +110,10 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => {
                       setUsername(e.target.value);
-                      if (showError) setShowError(false); // Sembunyikan error saat user mulai mengetik
+                      if (error) setError(null); // Sembunyikan error saat user mulai mengetik
                     }}
-                    placeholder="halo_fixparking"
+                    placeholder="Username finance"
+                    autoComplete="username"
                     className="w-full h-[52px] pl-12 pr-4 bg-[#595148] border-none rounded-[12px] text-[#EAE1D8] text-[15px] placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#BF8F51] transition-all"
                   />
                 </div>
@@ -112,43 +136,41 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      if (showError) setShowError(false);
+                      if (error) setError(null);
                     }}
                     placeholder="••••••••"
+                    autoComplete="current-password"
                     className="w-full h-[52px] pl-12 pr-4 bg-[#595148] border-none rounded-[12px] text-[#EAE1D8] text-[15px] placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#BF8F51] transition-all"
                   />
                 </div>
               </div>
 
-
-
-              {/* UI Error Message Slicing */}
-              {showError && (
+              {/* UI Error Message */}
+              {error && (
                 <div className="flex items-start gap-2 pt-1">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                     <line x1="12" y1="9" x2="12" y2="13"></line>
                     <line x1="12" y1="17" x2="12.01" y2="17"></line>
                   </svg>
-                  <p className="text-[#EF4444] text-[15px] leading-snug">
-                    Login gagal, silakan periksa Username dan <br className="hidden md:block" /> kata sandi Anda.
-                  </p>
+                  <p className="text-[#EF4444] text-[15px] leading-snug">{error}</p>
                 </div>
               )}
 
               {/* Tombol Submit */}
-              <div className={`flex justify-center ${showError ? 'pt-2' : 'pt-6'}`}>
+              <div className={`flex justify-center ${error ? 'pt-2' : 'pt-6'}`}>
                 <button
                   type="submit"
-                  className="w-[160px] h-[48px] bg-black hover:bg-[#111] text-[#BF8F51] text-[27px] font-semibold rounded-[10px] transition-colors shadow-[0_4px_15px_rgba(0,0,0,0.5)] flex items-center justify-center relative z-10"
+                  disabled={submitting}
+                  className="w-[160px] h-[48px] bg-black hover:bg-[#111] text-[#BF8F51] text-[27px] font-semibold rounded-[10px] transition-colors shadow-[0_4px_15px_rgba(0,0,0,0.5)] flex items-center justify-center relative z-10 disabled:opacity-50"
                 >
-                  Masuk
+                  {submitting ? 'Memproses…' : 'Masuk'}
                 </button>
               </div>
             </form>
           </div>
         </div>
-        
+
       </div>
     </div>
   );

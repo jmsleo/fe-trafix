@@ -12,7 +12,19 @@ export default function FinanceSidebar() {
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
 
   // DAFTAR MENU FINANCE (Berdasarkan Desain Terbaru)
-  const financeMenus = [
+  interface SubMenu {
+    name: string;
+    path: string;
+    icon?: React.ReactNode;
+  }
+  interface FinanceMenu {
+    name: string;
+    path: string;
+    icon: React.ReactNode;
+    hasDropdown?: boolean;
+    subMenus?: SubMenu[];
+  }
+  const financeMenus: FinanceMenu[] = [
     { 
       name: 'Dashboard', 
       path: '/finance/dashboard', // Sesuaikan path default-nya
@@ -88,13 +100,13 @@ export default function FinanceSidebar() {
             
             // Logika Active: Jika ada di halaman dashboard, pastikan exact path atau includes path.
             const isActive = pathname.includes(menu.path);
-            const isDropdownOpen = (menu as any).hasDropdown && openDropdownIndex === index;
+            const isDropdownOpen = menu.hasDropdown && openDropdownIndex === index;
 
             return (
               <div key={index} className="flex flex-col">
                 
                 {/* TOMBOL MENU UTAMA */}
-                {(menu as any).hasDropdown ? (
+                {(menu.hasDropdown) ? (
                   // Jika punya dropdown (Saat ini tidak ada di finance, tapi disisakan logikanya)
                   <button 
                     onClick={() => setOpenDropdownIndex(isDropdownOpen ? null : index)}
@@ -142,9 +154,9 @@ export default function FinanceSidebar() {
                 )}
 
                 {/* AREA SUB-MENU (DROPDOWN) - Jika suatu saat dipakai */}
-                {(menu as any).hasDropdown && isDropdownOpen && (
+                {menu.hasDropdown && isDropdownOpen && (
                   <div className="mt-2 ml-4 flex flex-col space-y-1 pl-2 border-l border-[#B5884D]/30 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {(menu as any).subMenus?.map((subMenu: any, subIndex: number) => {
+                    {menu.subMenus?.map((subMenu, subIndex) => {
                       const isSubActive = pathname === subMenu.path;
                       return (
                         <Link 
