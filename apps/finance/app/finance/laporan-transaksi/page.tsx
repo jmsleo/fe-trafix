@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import ExportButtons from '@/app/components/ExportButtons';
 import { useTransactionReport } from '@/hooks/useFinanceReports';
 import type { ParkingStatus, TransactionReportItem } from '@/lib/api/types';
 import { durationMinutes, formatDateTime, formatRupiah } from '@/lib/format';
@@ -87,14 +88,15 @@ export default function LaporanTransaksiPage() {
         <h2 className="text-2xl font-bold text-[#EAE1D8]">Laporan Transaksi</h2>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 border border-[#BF8F51] rounded-[7px] text-[#BF8F51] text-sm font-medium hover:bg-[#BF8F51]/10 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Export PDF
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 border border-[#BF8F51] rounded-[7px] text-[#BF8F51] text-sm font-medium hover:bg-[#BF8F51]/10 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>
-            Export EXCEL
-          </button>
+          <ExportButtons
+            report="transactions"
+            params={{
+              search: search || undefined,
+              status: status || undefined,
+              start_date: appliedRange.start || undefined,
+              end_date: appliedRange.end || undefined,
+            }}
+          />
         </div>
       </div>
 
