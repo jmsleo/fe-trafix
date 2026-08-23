@@ -9,27 +9,10 @@ import { posEventStreamUrl, formatRupiah } from '@/lib/api/pos';
 import { tokenStorage } from '@/lib/api/client';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
-interface VehicleKey {
-  k: string;
-  v: string;
-  vehicleId?: number;
-  special?: 'manual' | 'lost';
-}
-
-const VEHICLE_KEYS: VehicleKey[] = [
-  { k: 'F1', v: 'Motor', vehicleId: 1 },
-  { k: 'F2', v: 'Mobil', vehicleId: 2 },
-  { k: 'F3', v: 'Taksi/Ojol', vehicleId: 3 },
-  { k: 'F4', v: 'Bus', vehicleId: 4 },
-  { k: 'F5', v: 'Box/Truk Sedang', vehicleId: 2 },
-  { k: 'F6', v: 'Bus Besar', vehicleId: 4 },
-  { k: 'F7', v: 'Emergency', vehicleId: 2 },
-  { k: 'F8', v: 'Guest', vehicleId: 1 },
-  { k: 'F9', v: 'Tiket Manual', special: 'manual' },
-  { k: 'F10', v: 'Tiket Hilang', special: 'lost' },
-];
-
 type Mode = 'normal' | 'manual' | 'lost';
+
+// How many vehicle classes get an F-key shortcut; the rest stay clickable.
+const KEYED_SLOTS = 8;
 
 export default function OperatorDashboardPage() {
   const router = useRouter();
@@ -48,7 +31,7 @@ export default function OperatorDashboardPage() {
   const [waktu, setWaktu] = useState('');
   const [platKendaraan, setPlatKendaraan] = useState('');
   const [ticketCode, setTicketCode] = useState('');
-  const [selectedKey, setSelectedKey] = useState<string>('F2');
+  const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('normal');
   const [quoteData, setQuoteData] = useState<{ total: number; duration: string; breakdown: string; member: boolean; name?: string | null; plate?: string | null; timeIn?: string | null; timeOut?: string | null; vehicleId?: number | null } | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -68,17 +51,26 @@ export default function OperatorDashboardPage() {
   // the session payload itself.
   const gateCode = useMemo(() => session?.gate?.gate_code ?? null, [session]);
 
-  // Wire id -> admin-configured flat price, so every hotkey of a class shows
-  // what a manual ticket will charge.
-  const priceByWireId = useMemo(() => {
-    const map = new Map<number, number | null>();
-    for (const vt of refs?.vehicle_types ?? []) {
-      if (vt.wire_id !== null && vt.wire_id !== undefined && !map.has(vt.wire_id)) {
-        map.set(vt.wire_id, vt.price);
-      }
-    }
+  // The grid mirrors exactly what admin configured (ACTIVE classes from
+  // /pos/refs), sorted by name; the first KEYED_SLOTS get F-key shortcuts.
+  const vehicleTypes = useMemo(
+    () => [...(refs?.vehicle_types ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+    [refs],
+  );
+  const hotkeyByTypeId = useMemo(() => {
+    const map = new Map<string, string>();
+    vehicleTypes.slice(0, KEYED_SLOTS).forEach((vt, i) => map.set(vt.id, `F${i + 1}`));
     return map;
-  }, [refs]);
+  }, [vehicleTypes]);
+
+  // Falls back to the first class while the stored pick is missing/stale
+  // (initial load, admin removed the type).
+  const effectiveTypeId = useMemo(() => {
+    if (selectedTypeId && vehicleTypes.some((vt) => vt.id === selectedTypeId)) {
+      return selectedTypeId;
+    }
+    return vehicleTypes[0]?.id ?? null;
+  }, [selectedTypeId, vehicleTypes]);
 
   const showToast = useCallback((type: 'error' | 'success', title: string, body: string) => {
     setToast({ type, title, body });
@@ -86,20 +78,16 @@ export default function OperatorDashboardPage() {
     toastTimer.current = setTimeout(() => setToast(null), 6000);
   }, []);
 
-  const handleVehicleKey = useCallback((key: VehicleKey) => {
-    setSelectedKey(key.k);
-    if (key.special) {
-      setMode(key.special);
-    } else {
-      setMode('normal');
-    }
+  const selectType = useCallback((vtId: string) => {
+    setSelectedTypeId(vtId);
+    setMode('normal');
   }, []);
 
   const resetAfterSuccess = useCallback(() => {
     setPlatKendaraan('');
     setTicketCode('');
     setQuoteData(null);
-    setSelectedKey('F2');
+    setSelectedTypeId(null);
     setMode('normal');
   }, []);
 
@@ -128,15 +116,26 @@ export default function OperatorDashboardPage() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const key = VEHICLE_KEYS.find((k) => k.k.toLowerCase() === e.key.toLowerCase());
-      if (key) {
+      const upper = e.key.toUpperCase();
+      if (upper === 'F9') {
         e.preventDefault();
-        handleVehicleKey(key);
+        setMode('manual');
+        return;
+      }
+      if (upper === 'F10') {
+        e.preventDefault();
+        setMode('lost');
+        return;
+      }
+      const match = [...hotkeyByTypeId.entries()].find(([, hotkey]) => hotkey === upper);
+      if (match) {
+        e.preventDefault();
+        selectType(match[0]);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleVehicleKey]);
+  }, [hotkeyByTypeId, selectType]);
 
   useEffect(() => {
     if (!gateCode) return;
@@ -166,9 +165,8 @@ export default function OperatorDashboardPage() {
         showToast('error', 'Data Tidak Ditemukan', 'Silakan masukkan nomor plat kendaraan terlebih dahulu.');
         return;
       }
-      const vehicleId = VEHICLE_KEYS.find((k) => k.k === selectedKey)?.vehicleId;
-      if (!vehicleId) {
-        showToast('error', 'Jenis Kendaraan', 'Pilih jenis kendaraan (F1–F8) untuk tiket manual / hilang.');
+      if (!effectiveTypeId) {
+        showToast('error', 'Jenis Kendaraan', 'Pilih jenis kendaraan untuk tiket manual / hilang.');
         return;
       }
       setShowPaymentModal(true);
@@ -181,12 +179,11 @@ export default function OperatorDashboardPage() {
       return;
     }
 
-    const vehicleId = VEHICLE_KEYS.find((k) => k.k === selectedKey)?.vehicleId;
     try {
       const res = await quote.mutateAsync({
         transaction_code: ticketCode.trim() || null,
         police_number: platKendaraan.trim() || null,
-        vehicle_id: vehicleId ?? null,
+        vehicle_type_id: effectiveTypeId,
       });
       if (res.status !== 'success' || !res.data) {
         showToast('error', 'Data Tidak Ditemukan', res.message || 'Silakan masukkan nomor plat secara manual atau scan ulang tiket.');
@@ -211,10 +208,12 @@ export default function OperatorDashboardPage() {
   };
 
   const handleConfirmPayment = async () => {
-    const vehicleId = VEHICLE_KEYS.find((k) => k.k === selectedKey)?.vehicleId ?? quoteData?.vehicleId ?? null;
     try {
       if (mode === 'manual') {
-        const res = await manualTx.mutateAsync({ police_number: platKendaraan.trim(), vehicle_id: vehicleId ?? 1 });
+        const res = await manualTx.mutateAsync({
+          police_number: platKendaraan.trim(),
+          vehicle_type_id: effectiveTypeId,
+        });
 setShowPaymentModal(false);
       setSettled({ code: res.data?.transaction_code ?? undefined, total: res.data?.total ?? undefined });
       showToast('success', 'Transaksi Berhasil', 'Transaksi manual tercatat. Gate dibuka.');
@@ -226,7 +225,7 @@ setShowPaymentModal(false);
         transaction_code: mode === 'lost' ? null : (ticketCode.trim() || null),
         police_number: platKendaraan.trim() || null,
         lost_ticket: mode === 'lost',
-        vehicle_id: mode === 'lost' ? vehicleId : (vehicleId ?? null),
+        vehicle_type_id: effectiveTypeId,
       });
       if (res.status !== 'success' || !res.data) {
         showToast('error', 'Gagal', res.message || 'Transaksi tidak dapat diselesaikan.');
@@ -315,30 +314,56 @@ setShowPaymentModal(false);
                 </div>
               </div>
               <div className="grid grid-cols-5 gap-3 mt-2 w-full">
-                {VEHICLE_KEYS.map((item) => {
-                  const price = item.vehicleId !== undefined ? priceByWireId.get(item.vehicleId) : undefined;
+                {vehicleTypes.map((vt) => {
+                  const hotkey = hotkeyByTypeId.get(vt.id);
                   return (
                     <button
-                      key={item.k}
-                      onClick={() => handleVehicleKey(item)}
+                      key={vt.id}
+                      onClick={() => selectType(vt.id)}
                       className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex flex-col items-center justify-center gap-0.5 whitespace-nowrap ${
-                        selectedKey === item.k
+                        effectiveTypeId === vt.id && mode === 'normal'
                           ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
                           : 'border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
                       }`}
                     >
                       <span className="flex items-center gap-1.5">
-                        <span className="font-bold">{item.k}</span>
-                        <span>{item.v}</span>
+                        {hotkey && <span className="font-bold">{hotkey}</span>}
+                        <span>{vt.name}</span>
                       </span>
-                      {price !== undefined && price !== null && (
+                      {vt.price !== null && (
                         <span className="text-[10px] leading-none opacity-80">
-                          {price === 0 ? 'Gratis' : formatRupiah(price)}
+                          {vt.price === 0 ? 'Gratis' : formatRupiah(vt.price)}
                         </span>
                       )}
                     </button>
                   );
                 })}
+                <button
+                  onClick={() => setMode('manual')}
+                  className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex items-center justify-center whitespace-nowrap ${
+                    mode === 'manual'
+                      ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
+                      : 'border-dashed border-[#BF8F51]/70 text-[#BF8F51]/80 hover:bg-[#BF8F51]/10'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-bold">F9</span>
+                    <span>Tiket Manual</span>
+                  </span>
+                </button>
+                <button
+                  onClick={() => setMode('lost')}
+                  className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex items-center justify-center whitespace-nowrap ${
+                    mode === 'lost'
+                      ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
+                      : 'border-dashed border-[#BF8F51]/70 text-[#BF8F51]/80 hover:bg-[#BF8F51]/10'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-bold">F10</span>
+                    <span>Tiket Hilang</span>
+                  </span>
+                </button>
               </div>
             </div>
 

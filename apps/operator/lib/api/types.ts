@@ -109,6 +109,8 @@ export interface PosQuoteRequest {
   police_number?: string | null;
   lost_ticket?: boolean;
   vehicle_id?: number | null;
+  // An admin-managed vehicle class; wins over the legacy wire id.
+  vehicle_type_id?: string | null;
 }
 
 export interface PosQuoteData {
@@ -185,6 +187,7 @@ export interface PosPrintRequest {
 
 export interface PosManualRequest {
   police_number: string;
-  vehicle_id: number;
+  vehicle_id?: number | null;
+  vehicle_type_id?: string | null;
   total?: number | null;
 }
