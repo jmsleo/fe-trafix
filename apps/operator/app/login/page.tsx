@@ -16,7 +16,6 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [shiftId, setShiftId] = useState('');
-  const [gateId, setGateId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,8 +33,8 @@ export default function LoginPage() {
       setError('Username dan kata sandi wajib diisi.');
       return;
     }
-    if (!shiftId || !gateId) {
-      setError('Pilih shift kerja dan gate terlebih dahulu.');
+    if (!shiftId) {
+      setError('Pilih shift kerja terlebih dahulu.');
       return;
     }
 
@@ -43,7 +42,7 @@ export default function LoginPage() {
     try {
       await login.mutateAsync({ username, password });
       try {
-        await startSession.mutateAsync({ shift_id: shiftId, gate_id: gateId });
+        await startSession.mutateAsync({ shift_id: shiftId });
       } catch (sessionErr: unknown) {
         const status = (sessionErr as { response?: { status?: number } })?.response?.status;
         if (status !== 409) {
@@ -174,32 +173,6 @@ export default function LoginPage() {
                     {refsLoading && <option disabled>Memuat shift…</option>}
                     {(refs?.shifts ?? []).map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#BF8F51]">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="6,9 18,9 12,16"></polygon>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Select Gate */}
-              <div className="space-y-2">
-                <label className="block text-[17px] font-semibold text-[#FFFFFF]">Pilih Gate</label>
-                <div className="relative">
-                  <select
-                    value={gateId}
-                    onChange={(e) => {
-                      setGateId(e.target.value);
-                      if (error) setError(null);
-                    }}
-                    className="w-full h-[50px] pl-4 pr-10 bg-[#16120E] border border-[#BF8F51]/40 rounded-[12px] text-[#BF8F51] text-[17px] focus:outline-none focus:border-[#BF8F51] transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="">Pilih Gate</option>
-                    {refsLoading && <option disabled>Memuat gate…</option>}
-                    {(refs?.gates ?? []).map((g) => (
-                      <option key={g.id} value={g.id}>{g.name} ({g.gate_code})</option>
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#BF8F51]">

@@ -64,10 +64,21 @@ export default function OperatorDashboardPage() {
   const [voidReason, setVoidReason] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const gateCode = useMemo(
-    () => refs?.gates?.find((g) => g.id === session?.gate_id)?.gate_code ?? null,
-    [refs, session],
-  );
+  // The backend binds the session to the exit gate; the code rides along on
+  // the session payload itself.
+  const gateCode = useMemo(() => session?.gate?.gate_code ?? null, [session]);
+
+  // Wire id -> admin-configured flat price, so every hotkey of a class shows
+  // what a manual ticket will charge.
+  const priceByWireId = useMemo(() => {
+    const map = new Map<number, number | null>();
+    for (const vt of refs?.vehicle_types ?? []) {
+      if (vt.wire_id !== null && vt.wire_id !== undefined && !map.has(vt.wire_id)) {
+        map.set(vt.wire_id, vt.price);
+      }
+    }
+    return map;
+  }, [refs]);
 
   const showToast = useCallback((type: 'error' | 'success', title: string, body: string) => {
     setToast({ type, title, body });
@@ -304,20 +315,30 @@ setShowPaymentModal(false);
                 </div>
               </div>
               <div className="grid grid-cols-5 gap-3 mt-2 w-full">
-                {VEHICLE_KEYS.map((item) => (
-                  <button
-                    key={item.k}
-                    onClick={() => handleVehicleKey(item)}
-                    className={`border rounded-[8px] h-[36px] px-2 text-[13px] transition flex items-center justify-center gap-1.5 whitespace-nowrap ${
-                      selectedKey === item.k
-                        ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
-                        : 'border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
-                    }`}
-                  >
-                    <span className="font-bold">{item.k}</span>
-                    <span>{item.v}</span>
-                  </button>
-                ))}
+                {VEHICLE_KEYS.map((item) => {
+                  const price = item.vehicleId !== undefined ? priceByWireId.get(item.vehicleId) : undefined;
+                  return (
+                    <button
+                      key={item.k}
+                      onClick={() => handleVehicleKey(item)}
+                      className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex flex-col items-center justify-center gap-0.5 whitespace-nowrap ${
+                        selectedKey === item.k
+                          ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
+                          : 'border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-bold">{item.k}</span>
+                        <span>{item.v}</span>
+                      </span>
+                      {price !== undefined && price !== null && (
+                        <span className="text-[10px] leading-none opacity-80">
+                          {price === 0 ? 'Gratis' : formatRupiah(price)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

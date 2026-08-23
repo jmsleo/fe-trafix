@@ -50,6 +50,8 @@ export interface VehicleTypeRef {
   id: string;
   code: string;
   name: string;
+  price: number | null;
+  wire_id: number | null;
   status: string;
 }
 
@@ -76,6 +78,7 @@ export interface ShiftBrief {
 export interface GateBrief {
   id: string;
   name: string;
+  gate_code: string;
   type: string;
   status: string;
 }
@@ -97,7 +100,8 @@ export interface OperatorSession {
 
 export interface SessionStartRequest {
   shift_id: string;
-  gate_id: string;
+  // Optional: the backend resolves the single configured exit gate.
+  gate_id?: string;
 }
 
 export interface PosQuoteRequest {
