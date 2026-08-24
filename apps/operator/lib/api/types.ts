@@ -111,6 +111,8 @@ export interface PosQuoteRequest {
   vehicle_id?: number | null;
   // An admin-managed vehicle class; wins over the legacy wire id.
   vehicle_type_id?: string | null;
+  // Price a manual ticket even though no transaction exists yet.
+  manual?: boolean;
 }
 
 export interface PosQuoteData {

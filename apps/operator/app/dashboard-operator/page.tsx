@@ -169,8 +169,31 @@ export default function OperatorDashboardPage() {
         showToast('error', 'Jenis Kendaraan', 'Pilih jenis kendaraan untuk tiket manual / hilang.');
         return;
       }
-      setShowPaymentModal(true);
-      setQuoteData({ total: 0, duration: '-', breakdown: mode === 'lost' ? 'Tarif tiket hilang' : 'Input manual', member: false, plate: platKendaraan });
+      // Ask the backend what this ticket will actually cost before taking
+      // money — nothing is written by a quote.
+      try {
+        const res = await quote.mutateAsync({
+          manual: mode === 'manual',
+          lost_ticket: mode === 'lost',
+          police_number: platKendaraan.trim(),
+          vehicle_type_id: effectiveTypeId,
+        });
+        if (res.status !== 'success' || !res.data) {
+          showToast('error', 'Data Tidak Ditemukan', res.message || 'Tarif tidak dapat dihitung.');
+          return;
+        }
+        setQuoteData({
+          total: res.data.total,
+          duration: res.data.duration,
+          breakdown: res.data.breakdown || (mode === 'lost' ? 'Tarif tiket hilang' : 'Input manual'),
+          member: false,
+          plate: platKendaraan,
+        });
+        setAmountReceived(String(res.data.total));
+        setShowPaymentModal(true);
+      } catch (err) {
+        showToast('error', 'Gagal', getApiErrorMessage(err, 'Terjadi kesalahan saat memeriksa tarif.'));
+      }
       return;
     }
 
