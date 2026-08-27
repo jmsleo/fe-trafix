@@ -160,18 +160,21 @@ export interface VehicleTypeBrief {
   id: string;
   code: string;
   name: string;
+  price: number | null;
   status: VehicleStatus;
 }
 
 export interface VehicleTypeCreate {
   code: string;
   name: string;
+  price?: number | null;
   status: VehicleStatus;
 }
 
 export interface VehicleTypeUpdate {
   code?: string | null;
   name?: string | null;
+  price?: number | null;
   status?: VehicleStatus | null;
 }
 
@@ -179,6 +182,7 @@ export interface VehicleTypeRead {
   id: string;
   code: string;
   name: string;
+  price: number | null;
   status: VehicleStatus;
   created_at: string;
   updated_at: string;
@@ -193,6 +197,7 @@ export type VehicleTypePage = Page<VehicleTypeRead>;
 export interface MemberBrief {
   id: string;
   member_code: string;
+  card_number?: string | null;
   name: string;
   status: MemberStatus;
 }
@@ -201,6 +206,7 @@ export interface MemberCreate {
   name: string;
   email?: string | null;
   phone_number?: string | null;
+  card_number?: string | null;
   status: MemberStatus;
   created_by?: string | null;
   police_number?: string | null;
@@ -212,6 +218,7 @@ export interface MemberUpdate {
   name?: string | null;
   email?: string | null;
   phone_number?: string | null;
+  card_number?: string | null;
   status?: MemberStatus | null;
   created_by?: string | null;
 }
@@ -219,6 +226,7 @@ export interface MemberUpdate {
 export interface MemberRead {
   id: string;
   member_code: string;
+  card_number?: string | null;
   name: string;
   email?: string | null;
   phone_number?: string | null;

@@ -16,6 +16,7 @@ import type { MemberRead, MemberStatus } from '@/lib/api/types';
 interface MemberForm {
   name: string;
   member_code: string;
+  card_number: string;
   police_number: string;
   vehicle_type_id: string;
   phone_number: string;
@@ -26,6 +27,7 @@ interface MemberForm {
 const emptyForm: MemberForm = {
   name: '',
   member_code: '',
+  card_number: '',
   police_number: '',
   vehicle_type_id: '',
   phone_number: '',
@@ -142,6 +144,7 @@ export default function DaftarMemberPage() {
     setFormData({
       name: member.name,
       member_code: member.member_code,
+      card_number: member.card_number ?? '',
       police_number: vehicle?.police_number ?? '',
       vehicle_type_id: vehicle?.vehicle_type?.id ?? '',
       phone_number: member.phone_number ?? '',
@@ -185,6 +188,12 @@ export default function DaftarMemberPage() {
 
     const statusTerbaru: MemberStatus = isStatusActive ? 'active' : 'inactive';
     const policeNumber = formData.police_number.trim().toUpperCase();
+    const cardNumber = formData.card_number.trim();
+
+    if (cardNumber && !/^\d+$/.test(cardNumber)) {
+      setFormError('No. Member hanya boleh berupa angka.');
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -195,6 +204,7 @@ export default function DaftarMemberPage() {
             name: formData.name.trim(),
             email: formData.email || null,
             phone_number: formData.phone_number || null,
+            card_number: cardNumber || null,
             status: statusTerbaru,
           },
         });
@@ -203,6 +213,7 @@ export default function DaftarMemberPage() {
           name: formData.name.trim(),
           email: formData.email || null,
           phone_number: formData.phone_number || null,
+          card_number: cardNumber || null,
           status: statusTerbaru,
           police_number: policeNumber,
           vehicle_type_id: formData.vehicle_type_id,
@@ -327,7 +338,7 @@ export default function DaftarMemberPage() {
                   const label = m.status === 'active' ? 'AKTIF' : m.status === 'inactive' ? 'NON AKTIF' : 'TERBLOKIR';
                   return (
                     <tr key={m.id} className={`${index % 2 === 0 ? 'bg-[#322A1F]' : 'bg-[#231F1A]'} hover:bg-[#3d3326] transition-colors border-b border-[#B5884D]/10`}>
-                      <td className="px-6 py-4 text-center whitespace-nowrap text-gray-300">{m.member_code}</td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap text-gray-300">{m.card_number ?? m.member_code}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">{m.name}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">{m.vehicles?.[0]?.police_number ?? '-'}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">{m.vehicles?.[0]?.vehicle_type?.name ?? '-'}</td>
@@ -413,8 +424,13 @@ export default function DaftarMemberPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-[#EAE1D8]">No. Member <span className="text-gray-400 font-normal">(Otomatis)</span></label>
+                  <label className="text-sm font-medium text-[#EAE1D8]">Kode Member <span className="text-gray-400 font-normal">(Otomatis)</span></label>
                   <input type="text" name="member_code" value={formData.member_code} disabled placeholder="Otomatis dibuat sistem" className="w-full px-4 py-2.5 text-sm bg-[#1A1612] border border-[#B5884D]/30 rounded-[7px] text-gray-500 cursor-not-allowed focus:outline-none" />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-[#EAE1D8]">No. Member <span className="text-gray-400 font-normal">(No. Kartu)</span></label>
+                  <input type="text" name="card_number" value={formData.card_number} onChange={handleInputChange} inputMode="numeric" maxLength={20} placeholder="Contoh: 0006248873" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
                 </div>
 
                 <div className="space-y-1">
