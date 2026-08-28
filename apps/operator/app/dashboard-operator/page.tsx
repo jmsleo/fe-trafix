@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import Header from '../layout/Header';
 import { useAuthEvents, useLogout, useMe } from '@/hooks/useAuth';
 import { usePosRefs, usePosSession, useQuote, useSettle, useManualTransaction, useVoid, useReprint, useReceipt, useEndPosSession } from '@/hooks/usePos';
@@ -16,8 +17,9 @@ const KEYED_SLOTS = 8;
 
 export default function OperatorDashboardPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: me } = useMe();
-  const { data: session, error: sessionError } = usePosSession();
+  const { data: session } = usePosSession();
   const { data: refs } = usePosRefs();
   const quote = useQuote();
   const settle = useSettle();
@@ -101,16 +103,11 @@ export default function OperatorDashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (sessionError) {
-      tokenStorage.clearTokens();
-      router.replace('/login');
-    }
-  }, [sessionError, router]);
-
   const handleUnauthorized = useCallback(() => {
+    queryClient.clear();
+    tokenStorage.clearTokens();
     router.replace('/login');
-  }, [router]);
+  }, [queryClient, router]);
 
   useAuthEvents(handleUnauthorized);
 
@@ -321,6 +318,15 @@ setShowPaymentModal(false);
             />
           </div>
         </div>
+
+        {!session && (
+          <div className="w-full rounded-[15px] border border-[#A64444] bg-[#2E1818] p-4 flex items-center justify-between gap-4">
+            <p className="text-[#FF5A5A] text-[13px] font-bold">
+              Tidak ada sesi operator aktif. Mulai sesi terlebih dahulu sebelum mengoperasikan gerbang.
+            </p>
+            <p className="text-[#B39E9E] text-[11px]">Gate keluar belum siap — pastikan tepat satu gate keluar dikonfigurasi.</p>
+          </div>
+        )}
 
         {/* 2. KONTEN UTAMA */}
         <div className="flex gap-[20px] w-full items-start">
