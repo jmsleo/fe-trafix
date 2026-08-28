@@ -98,7 +98,14 @@ export default function TarifParkirPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === 'fee_category' && value === 'flat') {
+        next.stay_charge = '';
+        next.ticket_charge = '';
+      }
+      return next;
+    });
   };
 
   const handleKlikTambah = () => {
@@ -359,26 +366,41 @@ export default function TarifParkirPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {formData.fee_category === 'flat' ? (
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-300">Tarif Dasar (Rp)</label>
                   <input type="number" name="base_price" value={formData.base_price} onChange={handleInputChange} placeholder="Contoh: 10000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-300">Tarif Per Jam (Rp)</label>
-                  <input type="number" name="stay_charge" value={formData.stay_charge} onChange={handleInputChange} placeholder="Contoh: 5000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-300">Tarif Dasar (Rp)</label>
+                    <input type="number" name="base_price" value={formData.base_price} onChange={handleInputChange} placeholder="Contoh: 10000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-300">Tarif Per Jam (Rp)</label>
+                    <input type="number" name="stay_charge" value={formData.stay_charge} onChange={handleInputChange} placeholder="Contoh: 5000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-300">Biaya Tiket (Rp)</label>
-                  <input type="number" name="ticket_charge" value={formData.ticket_charge} onChange={handleInputChange} placeholder="Contoh: 2000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
+              )}
+              {formData.fee_category !== 'flat' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-300">Biaya Tiket (Rp)</label>
+                    <input type="number" name="ticket_charge" value={formData.ticket_charge} onChange={handleInputChange} placeholder="Contoh: 2000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-300">Grace Period (menit)</label>
+                    <input type="number" name="grace_period_minutes" value={formData.grace_period_minutes} onChange={handleInputChange} placeholder="Contoh: 15" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
+                  </div>
                 </div>
+              )}
+              {formData.fee_category === 'flat' && (
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-300">Grace Period (menit)</label>
                   <input type="number" name="grace_period_minutes" value={formData.grace_period_minutes} onChange={handleInputChange} placeholder="Contoh: 15" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
                 </div>
-              </div>
+              )}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-300">Status</label>
                 <select name="status" value={formData.status} onChange={handleInputChange} className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]">
