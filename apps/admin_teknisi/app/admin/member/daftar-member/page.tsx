@@ -167,12 +167,38 @@ export default function DaftarMemberPage() {
   const handleSimpanMember = async () => {
     setFormError(null);
 
+    const cardNumber = formData.card_number.trim();
+    const policeNumber = formData.police_number.trim().toUpperCase();
+    const email = formData.email.trim();
+    const phoneNumber = formData.phone_number.trim();
+
     if (!formData.name.trim()) {
       setFormError('Nama lengkap wajib diisi.');
       return;
     }
+    if (!cardNumber) {
+      setFormError('No. Member (No. Kartu) wajib diisi.');
+      return;
+    }
+    if (!/^\d+$/.test(cardNumber)) {
+      setFormError('No. Member hanya boleh berupa angka.');
+      return;
+    }
+    if (!phoneNumber) {
+      setFormError('No. Telepon wajib diisi.');
+      return;
+    }
+    if (!email) {
+      setFormError('Email wajib diisi.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFormError('Format email tidak valid.');
+      return;
+    }
+
     if (idYangDiedit === null) {
-      if (!formData.police_number.trim()) {
+      if (!policeNumber) {
         setFormError('No. plat kendaraan wajib diisi.');
         return;
       }
@@ -187,13 +213,6 @@ export default function DaftarMemberPage() {
     }
 
     const statusTerbaru: MemberStatus = isStatusActive ? 'active' : 'inactive';
-    const policeNumber = formData.police_number.trim().toUpperCase();
-    const cardNumber = formData.card_number.trim();
-
-    if (cardNumber && !/^\d+$/.test(cardNumber)) {
-      setFormError('No. Member hanya boleh berupa angka.');
-      return;
-    }
 
     setIsSaving(true);
     try {
@@ -202,18 +221,18 @@ export default function DaftarMemberPage() {
           id: idYangDiedit,
           data: {
             name: formData.name.trim(),
-            email: formData.email || null,
-            phone_number: formData.phone_number || null,
-            card_number: cardNumber || null,
+            email,
+            phone_number: phoneNumber,
+            card_number: cardNumber,
             status: statusTerbaru,
           },
         });
       } else {
         await createMember.mutateAsync({
           name: formData.name.trim(),
-          email: formData.email || null,
-          phone_number: formData.phone_number || null,
-          card_number: cardNumber || null,
+          email,
+          phone_number: phoneNumber,
+          card_number: cardNumber,
           status: statusTerbaru,
           police_number: policeNumber,
           vehicle_type_id: formData.vehicle_type_id,
