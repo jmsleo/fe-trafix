@@ -8,6 +8,7 @@ import {
   deleteShift,
   getOperatorShiftAssignment,
   getShift,
+  listAllOperatorShiftAssignments,
   listOperatorShiftAssignments,
   listShifts,
   updateOperatorShiftAssignment,
@@ -80,6 +81,13 @@ export function useOperatorShiftAssignments(params?: OperatorShiftAssignmentList
   return useQuery({
     queryKey: [...shiftKeys.assignments, 'list', params] as const,
     queryFn: () => listOperatorShiftAssignments(params),
+  });
+}
+
+export function useAllOperatorShiftAssignments() {
+  return useQuery({
+    queryKey: [...shiftKeys.assignments, 'all'] as const,
+    queryFn: () => listAllOperatorShiftAssignments(),
   });
 }
 

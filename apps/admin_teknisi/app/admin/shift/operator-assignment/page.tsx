@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { useOperatorShiftAssignments, useCreateOperatorShiftAssignment, useUpdateOperatorShiftAssignment, useDeleteOperatorShiftAssignment, useShifts } from '@/hooks/useShifts';
+import { useOperatorShiftAssignments, useAllOperatorShiftAssignments, useCreateOperatorShiftAssignment, useUpdateOperatorShiftAssignment, useDeleteOperatorShiftAssignment, useShifts } from '@/hooks/useShifts';
 import { useUsers } from '@/hooks/useUsers';
 import type { OperatorShiftAssignmentRead, OperatorShiftAssignmentStatus } from '@/lib/api/types';
 import { getApiErrorMessage } from '@/lib/api/errors';
@@ -31,6 +31,7 @@ export default function OperatorAssignmentPage() {
   const pageSize = 10;
 
   const { data, isLoading, isError, error, refetch } = useOperatorShiftAssignments({ page, page_size: pageSize });
+  const { data: allAssignmentsData } = useAllOperatorShiftAssignments();
   const { data: shiftsData } = useShifts({ page_size: 100 });
   const { data: usersData } = useUsers({ page_size: 100, role: 'operator' });
 
@@ -41,6 +42,7 @@ export default function OperatorAssignmentPage() {
   const items = useMemo(() => data?.items ?? [], [data]);
   const total = useMemo(() => data?.total ?? 0, [data]);
   const totalPages = useMemo(() => data?.total_pages ?? 1, [data]);
+  const allAssignments = useMemo(() => allAssignmentsData ?? [], [allAssignmentsData]);
 
   const activeShifts = useMemo(
     () => (shiftsData?.items ?? []).filter((s) => s.status === 'active'),
@@ -112,11 +114,11 @@ export default function OperatorAssignmentPage() {
   const occupiedShiftIds = useMemo(
     () =>
       new Set(
-        items
-          .filter((a) => a.operator_id === selectedOperator && a.id !== (editItem?.id ?? null))
+        allAssignments
+          .filter((a) => a.id !== (editItem?.id ?? null))
           .map((a) => a.shift_id),
       ),
-    [items, selectedOperator, editItem],
+    [allAssignments, editItem],
   );
 
   const selectableShifts = useMemo(

@@ -53,6 +53,21 @@ export async function listOperatorShiftAssignments(
   return response.data;
 }
 
+export async function listAllOperatorShiftAssignments(): Promise<OperatorShiftAssignmentRead[]> {
+  const pageSize = 100;
+  const all: OperatorShiftAssignmentRead[] = [];
+  let page = 1;
+  for (;;) {
+    const response = await apiClient.get<OperatorShiftAssignmentPage>('/operator-shifts/', {
+      params: { page, page_size: pageSize },
+    });
+    all.push(...response.data.items);
+    if (page >= response.data.total_pages) break;
+    page += 1;
+  }
+  return all;
+}
+
 export async function getOperatorShiftAssignment(
   assignmentId: string,
 ): Promise<OperatorShiftAssignmentRead> {
