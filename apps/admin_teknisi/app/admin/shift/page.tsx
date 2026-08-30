@@ -288,6 +288,25 @@ export default function ShiftPage() {
                   <input type="time" name="finish_time" value={formData.finish_time} onChange={handleInputChange} className="w-full px-4 py-3 text-sm bg-[#0B0908] border border-[#B5884D]/60 rounded-[8px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] appearance-none" style={{ colorScheme: 'dark' }} />
                 </div>
               </div>
+
+              {/* Status Shift */}
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <label className="text-sm font-medium text-[#EAE1D8] tracking-wide">Status Shift</label>
+                <div className="flex items-center gap-3">
+                  <div
+                    role="switch"
+                    aria-checked={isStatusActive}
+                    aria-label="Status shift aktif atau non aktif"
+                    onClick={() => setIsStatusActive(!isStatusActive)}
+                    className={`w-[52px] h-[28px] rounded-full p-1 cursor-pointer transition-colors border flex items-center ${isStatusActive ? 'border-[#B5884D] bg-[#B5884D]' : 'border-gray-500 bg-transparent'}`}
+                  >
+                    <div className={`bg-[#EAE1D8] w-[20px] h-[20px] rounded-full shadow-md transform transition-transform ${isStatusActive ? 'translate-x-[22px]' : 'translate-x-0'}`}></div>
+                  </div>
+                  <span className={`text-[12px] font-bold tracking-wide w-[80px] ${isStatusActive ? 'text-[#79FF8D]' : 'text-[#FF8080]'}`}>
+                    {isStatusActive ? 'AKTIF' : 'NON AKTIF'}
+                  </span>
+                </div>
+              </div>
             </div>
             <div className="flex justify-end items-center gap-3 mt-10">
               <button onClick={() => setIsModalOpen(false)} className="px-7 py-2.5 text-sm font-bold text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors">Batal</button>
