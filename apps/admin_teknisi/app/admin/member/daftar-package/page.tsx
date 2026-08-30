@@ -10,17 +10,28 @@ import {
 } from '@/hooks/useMembers';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import type { SubscriptionPlanRead } from '@/lib/api/types';
+import { useVehicleTypes } from '@/hooks/useVehicleTypes';
 
 interface PackageForm {
   nama: string;
   durasiHari: string;
   harga: string;
+  vehicle_type_id: string;
 }
 
-const emptyForm: PackageForm = { nama: '', durasiHari: '', harga: '' };
+const emptyForm: PackageForm = { nama: '', durasiHari: '', harga: '', vehicle_type_id: '' };
 
 function formatRupiah(value: number): string {
   return `Rp ${value.toLocaleString('id-ID')}`;
+}
+
+function formatDateTime(iso?: string): string {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+  const date = d.toLocaleDateString('id-ID');
+  const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return `${date} ${time}`;
 }
 
 export default function DaftarPackagePage() {
@@ -43,6 +54,8 @@ export default function DaftarPackagePage() {
     page,
     page_size: 10,
   });
+
+  const { data: vehicleTypesData } = useVehicleTypes({ page_size: 100 });
 
   // 2. MUTATIONS
   const createPackage = useCreateSubscriptionPlan();
@@ -80,6 +93,7 @@ export default function DaftarPackagePage() {
       nama: pkg.name,
       durasiHari: pkg.duration_in_days.toString(),
       harga: pkg.price.toString(),
+      vehicle_type_id: pkg.vehicle_type_id,
     });
     setIsStatusActive(pkg.is_active ?? true);
     setFormError(null);
@@ -101,11 +115,16 @@ export default function DaftarPackagePage() {
       setFormError('Harga wajib diisi.');
       return;
     }
+    if (!formData.vehicle_type_id) {
+      setFormError('Jenis kendaraan wajib dipilih.');
+      return;
+    }
 
     const payload = {
       name: formData.nama.trim(),
       duration_in_days: Number(formData.durasiHari),
       price: Number(formData.harga),
+      vehicle_type_id: formData.vehicle_type_id,
       is_active: isStatusActive,
     };
 
@@ -210,29 +229,33 @@ export default function DaftarPackagePage() {
               <tr>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">NO.</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">NAMA PACKAGE</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">JENIS KENDARAAN</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">DURASI (HARI)</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">HARGA (Rp)</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">LAST UPDATE</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">STATUS</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">AKSI</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data package...</td></tr>
+                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data package...</td></tr>
               ) : isError ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center bg-[#231F1A]">
+                <tr><td colSpan={8} className="px-6 py-8 text-center bg-[#231F1A]">
                   <span className="text-[#FF5656]">Gagal memuat data.</span>{' '}
                   <button onClick={() => refetch()} className="text-[#B5884D] hover:underline">Coba lagi</button>
                 </td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data package.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data package.</td></tr>
               ) : (
                 items.map((p, index) => (
                   <tr key={p.id} className={`${index % 2 === 0 ? 'bg-[#322A1F]' : 'bg-[#231F1A]'} hover:bg-[#3d3326] transition-colors border-b border-[#B5884D]/10`}>
                     <td className="px-6 py-4 font-medium text-center">{startIndex + index}.</td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">{p.name}</td>
+                    <td className="px-6 py-4 text-center whitespace-nowrap">{p.vehicle_type?.name ?? '-'}</td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">{p.duration_in_days} Hari</td>
                     <td className="px-6 py-4 text-center whitespace-nowrap font-medium">{formatRupiah(p.price)}</td>
+                    <td className="px-6 py-4 text-center whitespace-nowrap">{formatDateTime(p.updated_at)}</td>
 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`flex items-center justify-center mx-auto w-[97px] h-[23px] rounded-[9px] border text-[10px] font-semibold tracking-wide
@@ -325,6 +348,22 @@ export default function DaftarPackagePage() {
                 <div className="relative flex items-center">
                   <span className="absolute left-4 text-sm text-[#B5884D]">Rp</span>
                   <input type="number" name="harga" value={formData.harga} onChange={handleInputChange} className="w-full pl-10 pr-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
+                </div>
+              </div>
+
+              {/* Jenis Kendaraan */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-[#EAE1D8]">Jenis Kendaraan</label>
+                <div className="relative">
+                  <select name="vehicle_type_id" value={formData.vehicle_type_id} onChange={handleInputChange} className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] cursor-pointer">
+                    <option value="">Pilih Kendaraan</option>
+                    {(vehicleTypesData?.items ?? []).map((vt) => (
+                      <option key={vt.id} value={vt.id}>{vt.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#B5884D]">
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 8L0.669873 0.5L9.33013 0.5L5 8Z" fill="#B5884D"/></svg>
+                  </div>
                 </div>
               </div>
 
