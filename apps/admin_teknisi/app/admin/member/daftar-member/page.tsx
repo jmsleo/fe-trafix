@@ -157,7 +157,7 @@ export default function DaftarMemberPage() {
   };
 
   const hitungTanggalBerakhir = () => {
-    if (idYangDiedit !== null && currentSub) {
+    if (idYangDiedit !== null && currentSub && formData.plan_id === currentSub.plan?.id) {
       return formatTanggalInput(currentSub.end_date);
     }
     if (!selectedPlan) return '';
@@ -206,6 +206,7 @@ export default function DaftarMemberPage() {
             phone_number: formData.phone_number || null,
             card_number: cardNumber || null,
             status: statusTerbaru,
+            plan_id: formData.plan_id || undefined,
           },
         });
       } else {
@@ -478,8 +479,7 @@ export default function DaftarMemberPage() {
                         name="plan_id"
                         value={formData.plan_id}
                         onChange={handleInputChange}
-                        disabled={idYangDiedit !== null}
-                        className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] cursor-pointer disabled:cursor-not-allowed disabled:bg-[#1A1612] disabled:border-[#B5884D]/30"
+                        className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] cursor-pointer"
                       >
                         <option value="">Pilih Package</option>
                         {(plansData?.items ?? []).map((p) => (
@@ -524,7 +524,11 @@ export default function DaftarMemberPage() {
                     <label className="text-sm font-medium text-[#EAE1D8]">Tanggal Mulai <span className="text-gray-400 font-normal">(Otomatis)</span></label>
                     <input
                       type="date"
-                      value={idYangDiedit !== null ? formatTanggalInput(currentSub?.start_date) || todayStr : todayStr}
+                      value={
+                        idYangDiedit !== null && currentSub && formData.plan_id === currentSub.plan?.id
+                          ? formatTanggalInput(currentSub?.start_date) || todayStr
+                          : todayStr
+                      }
                       disabled
                       className="w-full px-4 py-2.5 text-sm bg-[#1A1612] border border-[#B5884D]/30 rounded-[7px] text-gray-500 cursor-not-allowed focus:outline-none"
                       style={{ colorScheme: 'dark' }}
