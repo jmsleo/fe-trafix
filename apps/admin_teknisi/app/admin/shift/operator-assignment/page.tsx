@@ -216,9 +216,11 @@ export default function OperatorAssignmentPage() {
                   style={{ colorScheme: 'dark' }}
                 >
                   <option value="">Pilih Shift</option>
-                  {shifts.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.start_time} - {s.finish_time})</option>
-                  ))}
+                  {shifts
+                    .filter((s) => s.status === 'active')
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.start_time} - {s.finish_time})</option>
+                    ))}
                 </select>
               </div>
             </div>
