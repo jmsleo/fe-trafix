@@ -18,11 +18,13 @@ export interface TokenPair {
   token_type?: string;
 }
 
+export type UserRole = 'admin' | 'finance' | 'teknisi' | 'operator';
+
 export interface UserRead {
   id: string;
   name: string;
   username: string;
-  role: string;
+  role: UserRole;
   status: string;
   last_login?: string | null;
   created_at: string;

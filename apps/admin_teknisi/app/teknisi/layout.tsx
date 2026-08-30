@@ -13,8 +13,9 @@ function homePathFor(role?: string): string {
     case 'admin':
       return '/admin/tarif-parkir';
     case 'teknisi':
-    default:
       return '/teknisi/dashboard';
+    default:
+      return '/';
   }
 }
 

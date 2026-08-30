@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!meLoading && me) {
+    if (!meLoading && me && me.role === 'operator') {
       router.replace('/dashboard-operator');
     }
   }, [meLoading, me, router]);

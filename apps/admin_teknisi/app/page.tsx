@@ -16,11 +16,12 @@ const poppins = Poppins({
 
 function homePathFor(role?: string): string {
   switch (role) {
+    case 'admin':
+      return '/admin/tarif-parkir';
     case 'teknisi':
       return '/teknisi/dashboard';
-    case 'admin':
     default:
-      return '/admin/tarif-parkir';
+      return '/';
   }
 }
 
