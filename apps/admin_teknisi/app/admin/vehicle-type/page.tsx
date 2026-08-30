@@ -14,15 +14,10 @@ import type { ActiveStatus, VehicleTypeRead } from '@/lib/api/types';
 interface VehicleTypeForm {
   code: string;
   name: string;
-  price: string;
   status: ActiveStatus;
 }
 
-const emptyForm: VehicleTypeForm = { code: '', name: '', price: '', status: 'active' };
-
-function formatRupiah(value: number): string {
-  return `Rp ${value.toLocaleString('id-ID')}`;
-}
+const emptyForm: VehicleTypeForm = { code: '', name: '', status: 'active' };
 
 function formatTanggalUpdate(iso: string): string {
   const date = new Date(iso);
@@ -85,7 +80,6 @@ export default function VehicleTypePage() {
     setFormData({
       code: vehicle.code,
       name: vehicle.name,
-      price: vehicle.price === null ? '' : String(vehicle.price),
       status: vehicle.status,
     });
     setFormError(null);
@@ -104,17 +98,9 @@ export default function VehicleTypePage() {
       return;
     }
 
-    const trimmedPrice = formData.price.trim();
-    const parsedPrice = trimmedPrice === '' ? null : Number(trimmedPrice);
-    if (trimmedPrice !== '' && (!Number.isInteger(parsedPrice) || (parsedPrice ?? 0) < 0)) {
-      setFormError('Harga harus berupa angka bulat >= 0.');
-      return;
-    }
-
     const payload = {
       code: formData.code.trim(),
       name: formData.name.trim(),
-      price: parsedPrice,
       status: formData.status,
     };
 
@@ -218,7 +204,6 @@ export default function VehicleTypePage() {
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">NO.</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">KODE KENDARAAN</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">JENIS KENDARAAN</th>
-                <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">HARGA</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">STATUS</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">Tanggal update</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">AKSI</th>
@@ -226,21 +211,20 @@ export default function VehicleTypePage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data kendaraan...</td></tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data kendaraan...</td></tr>
               ) : isError ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center bg-[#231F1A]">
+                <tr><td colSpan={6} className="px-6 py-8 text-center bg-[#231F1A]">
                   <span className="text-[#FF5656]">Gagal memuat data.</span>{' '}
                   <button onClick={() => refetch()} className="text-[#B5884D] hover:underline">Coba lagi</button>
                 </td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data tipe kendaraan.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data tipe kendaraan.</td></tr>
               ) : (
                 items.map((v, index) => (
                   <tr key={v.id} className={`${index % 2 === 0 ? 'bg-[#322A1F]' : 'bg-[#231F1A]'} hover:bg-[#3d3326] transition-colors`}>
                     <td className="px-6 py-4 font-medium text-center whitespace-nowrap">{startIndex + index}.</td>
                     <td className="px-6 py-4 font-semibold text-[#B5884D] text-center whitespace-nowrap">{v.code}</td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">{v.name}</td>
-                    <td className="px-6 py-4 text-center whitespace-nowrap">{v.price === null ? '-' : formatRupiah(v.price)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`flex items-center justify-center mx-auto w-[97px] h-[23px] rounded-[9px] border text-[10px] font-semibold tracking-wide
                         ${v.status === 'active' ? 'border-[#79FF8D] bg-[#00FF2659] text-[#79FF8D]' : 'border-[#FF8080] bg-[#FF000059] text-[#FF8080]'}`}>
@@ -338,21 +322,6 @@ export default function VehicleTypePage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Contoh: Mobil Box"
-                  className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]"
-                />
-              </div>
-
-              {/* INPUT HARGA */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">Harga (Rp)</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  placeholder="Contoh: 4000 (kosongkan jika gratis)"
                   className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]"
                 />
               </div>

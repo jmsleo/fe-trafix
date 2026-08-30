@@ -264,7 +264,7 @@ export default function OperatorAssignmentPage() {
                 <label className="text-sm font-medium text-[#EAE1D8] tracking-wide">Operator</label>
                 <select
                   value={selectedOperator}
-                  onChange={(e) => setSelectedOperator(e.target.value)}
+                  onChange={(e) => { setSelectedOperator(e.target.value); setSelectedShift(''); }}
                   className="w-full px-4 py-3 text-sm bg-[#0B0908] border border-[#B5884D]/60 rounded-[8px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] appearance-none"
                   style={{ colorScheme: 'dark' }}
                 >
