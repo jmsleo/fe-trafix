@@ -8,13 +8,16 @@ import {
   deleteShift,
   getOperatorShiftAssignment,
   getShift,
+  listAllOperatorShiftAssignments,
   listOperatorShiftAssignments,
   listShifts,
+  updateOperatorShiftAssignment,
   updateShift,
 } from '@/lib/api/shifts';
 import type {
   OperatorShiftAssignmentCreate,
   OperatorShiftAssignmentListParams,
+  OperatorShiftAssignmentUpdate,
   SearchStatusParams,
   ShiftCreate,
   ShiftUpdate,
@@ -81,6 +84,13 @@ export function useOperatorShiftAssignments(params?: OperatorShiftAssignmentList
   });
 }
 
+export function useAllOperatorShiftAssignments() {
+  return useQuery({
+    queryKey: [...shiftKeys.assignments, 'all'] as const,
+    queryFn: () => listAllOperatorShiftAssignments(),
+  });
+}
+
 export function useOperatorShiftAssignment(id: string) {
   return useQuery({
     queryKey: [...shiftKeys.assignments, 'detail', id] as const,
@@ -93,6 +103,20 @@ export function useCreateOperatorShiftAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: OperatorShiftAssignmentCreate) => createOperatorShiftAssignment(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: shiftKeys.assignments }),
+  });
+}
+
+export function useUpdateOperatorShiftAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: OperatorShiftAssignmentUpdate;
+    }) => updateOperatorShiftAssignment(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: shiftKeys.assignments }),
   });
 }

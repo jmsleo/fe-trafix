@@ -4,6 +4,7 @@ import type {
   OperatorShiftAssignmentListParams,
   OperatorShiftAssignmentPage,
   OperatorShiftAssignmentRead,
+  OperatorShiftAssignmentUpdate,
   SearchStatusParams,
   ShiftCreate,
   ShiftPage,
@@ -52,6 +53,21 @@ export async function listOperatorShiftAssignments(
   return response.data;
 }
 
+export async function listAllOperatorShiftAssignments(): Promise<OperatorShiftAssignmentRead[]> {
+  const pageSize = 100;
+  const all: OperatorShiftAssignmentRead[] = [];
+  let page = 1;
+  for (;;) {
+    const response = await apiClient.get<OperatorShiftAssignmentPage>('/operator-shifts/', {
+      params: { page, page_size: pageSize },
+    });
+    all.push(...response.data.items);
+    if (page >= response.data.total_pages) break;
+    page += 1;
+  }
+  return all;
+}
+
 export async function getOperatorShiftAssignment(
   assignmentId: string,
 ): Promise<OperatorShiftAssignmentRead> {
@@ -65,6 +81,17 @@ export async function createOperatorShiftAssignment(
   data: OperatorShiftAssignmentCreate,
 ): Promise<OperatorShiftAssignmentRead> {
   const response = await apiClient.post<OperatorShiftAssignmentRead>('/operator-shifts/', data);
+  return response.data;
+}
+
+export async function updateOperatorShiftAssignment(
+  assignmentId: string,
+  data: OperatorShiftAssignmentUpdate,
+): Promise<OperatorShiftAssignmentRead> {
+  const response = await apiClient.put<OperatorShiftAssignmentRead>(
+    `/operator-shifts/${assignmentId}`,
+    data,
+  );
   return response.data;
 }
 

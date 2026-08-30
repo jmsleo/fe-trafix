@@ -404,6 +404,12 @@ export interface OperatorShiftAssignmentCreate {
   shift_id: string;
 }
 
+export interface OperatorShiftAssignmentUpdate {
+  operator_id: string;
+  shift_id: string;
+  status: OperatorShiftAssignmentStatus;
+}
+
 export interface OperatorShiftAssignmentRead {
   id: string;
   operator_id: string;
