@@ -8,6 +8,16 @@ import { useMe, useLogout, useAuthEvents } from '@/hooks/useAuth';
 
 const emptySubscribe = () => () => {};
 
+function homePathFor(role?: string): string {
+  switch (role) {
+    case 'teknisi':
+      return '/teknisi/dashboard';
+    case 'admin':
+    default:
+      return '/admin/tarif-parkir';
+  }
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -20,8 +30,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [router]));
 
   useEffect(() => {
-    if (mounted && !isLoading && !me) {
+    if (!mounted || isLoading) return;
+    if (!me) {
       router.push('/');
+    } else if (me.role !== 'admin') {
+      router.push(homePathFor(me.role));
     }
   }, [mounted, isLoading, me, router]);
 
