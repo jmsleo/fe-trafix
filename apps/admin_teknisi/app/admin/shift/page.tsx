@@ -1,10 +1,38 @@
 'use client';
 
 import Button from '@/app/components/ui/Button';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useShifts, useCreateShift, useUpdateShift, useDeleteShift } from '@/hooks/useShifts';
 import type { ShiftRead, ShiftStatus } from '@/lib/api/types';
 import { getApiErrorMessage } from '@/lib/api/errors';
+
+function minutesOf(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function shiftsOverlap(
+  aStart: string,
+  aFinish: string,
+  aCrosses: boolean,
+  bStart: string,
+  bFinish: string,
+  bCrosses: boolean,
+): boolean {
+  const DAY = 24 * 60;
+  const aRanges: [number, number][] = aCrosses
+    ? [[minutesOf(aStart), DAY], [0, minutesOf(aFinish)]]
+    : [[minutesOf(aStart), minutesOf(aFinish)]];
+  const bRanges: [number, number][] = bCrosses
+    ? [[minutesOf(bStart), DAY], [0, minutesOf(bFinish)]]
+    : [[minutesOf(bStart), minutesOf(bFinish)]];
+  for (const [as, ae] of aRanges) {
+    for (const [bs, be] of bRanges) {
+      if (as < be && bs < ae) return true;
+    }
+  }
+  return false;
+}
 
 export default function ShiftPage() {
   const [page, setPage] = useState(1);
@@ -31,6 +59,11 @@ export default function ShiftPage() {
     page,
     page_size: pageSize,
   });
+
+  // All active shifts, used to guard against time-overlapping shifts in the
+  // create/edit form (mirrors backend /shifts validation).
+  const { data: activeShiftsData } = useShifts({ status: 'active', page_size: 100 });
+  const activeShifts: ShiftRead[] = useMemo(() => activeShiftsData?.items ?? [], [activeShiftsData]);
 
   const createShift = useCreateShift();
   const updateShift = useUpdateShift();
@@ -84,6 +117,27 @@ export default function ShiftPage() {
     const crossesMidnight = formData.finish_time < formData.start_time;
     const status: ShiftStatus = isStatusActive ? 'active' : 'inactive';
 
+    if (isStatusActive) {
+      const conflicting = activeShifts.find(
+        (s) =>
+          s.id !== (editItem?.id ?? null) &&
+          shiftsOverlap(
+            formData.start_time,
+            formData.finish_time,
+            crossesMidnight,
+            s.start_time,
+            s.finish_time,
+            !!s.crosses_midnight,
+          ),
+      );
+      if (conflicting) {
+        alert(
+          `Waktu shift bentrok dengan shift aktif '${conflicting.name}' (${conflicting.start_time} - ${conflicting.finish_time}).`,
+        );
+        return;
+      }
+    }
+
     if (editItem) {
       updateShift.mutate(
         { id: editItem.id, data: { ...formData, crosses_midnight: crossesMidnight, status } },
@@ -101,7 +155,7 @@ export default function ShiftPage() {
         },
       );
     }
-  }, [formData, isStatusActive, editItem, createShift, updateShift]);
+  }, [formData, isStatusActive, editItem, activeShifts, createShift, updateShift]);
 
   const handleDelete = useCallback(() => {
     if (!deleteItem) return;
@@ -286,6 +340,25 @@ export default function ShiftPage() {
                 <div className="flex-1 space-y-2">
                   <label className="text-sm font-medium text-[#EAE1D8] tracking-wide">Finish Time</label>
                   <input type="time" name="finish_time" value={formData.finish_time} onChange={handleInputChange} className="w-full px-4 py-3 text-sm bg-[#0B0908] border border-[#B5884D]/60 rounded-[8px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] appearance-none" style={{ colorScheme: 'dark' }} />
+                </div>
+              </div>
+
+              {/* Status Shift */}
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <label className="text-sm font-medium text-[#EAE1D8] tracking-wide">Status Shift</label>
+                <div className="flex items-center gap-3">
+                  <div
+                    role="switch"
+                    aria-checked={isStatusActive}
+                    aria-label="Status shift aktif atau non aktif"
+                    onClick={() => setIsStatusActive(!isStatusActive)}
+                    className={`w-[52px] h-[28px] rounded-full p-1 cursor-pointer transition-colors border flex items-center ${isStatusActive ? 'border-[#B5884D] bg-[#B5884D]' : 'border-gray-500 bg-transparent'}`}
+                  >
+                    <div className={`bg-[#EAE1D8] w-[20px] h-[20px] rounded-full shadow-md transform transition-transform ${isStatusActive ? 'translate-x-[22px]' : 'translate-x-0'}`}></div>
+                  </div>
+                  <span className={`text-[12px] font-bold tracking-wide w-[80px] ${isStatusActive ? 'text-[#79FF8D]' : 'text-[#FF8080]'}`}>
+                    {isStatusActive ? 'AKTIF' : 'NON AKTIF'}
+                  </span>
                 </div>
               </div>
             </div>

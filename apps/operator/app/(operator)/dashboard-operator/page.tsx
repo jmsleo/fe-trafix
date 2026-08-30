@@ -359,9 +359,9 @@ setShowPaymentModal(false);
                         {hotkey && <span className="font-bold">{hotkey}</span>}
                         <span>{vt.name}</span>
                       </span>
-                      {vt.price !== null && (
+                      {vt.base_price !== null && (
                         <span className="text-[10px] leading-none opacity-80">
-                          {vt.price === 0 ? 'Gratis' : formatRupiah(vt.price)}
+                          {vt.base_price === 0 ? 'Gratis' : formatRupiah(vt.base_price)}
                         </span>
                       )}
                     </button>

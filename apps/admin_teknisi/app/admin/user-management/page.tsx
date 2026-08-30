@@ -16,9 +16,10 @@ interface UserForm {
   username: string;
   role: UserRole;
   password: string;
+  status: UserStatus;
 }
 
-const emptyForm: UserForm = { name: '', username: '', role: 'admin', password: '' };
+const emptyForm: UserForm = { name: '', username: '', role: 'admin', password: '', status: 'active' };
 
 function formatTanggalUpdate(iso: string): string {
   const date = new Date(iso);
@@ -91,6 +92,7 @@ export default function UserManagementPage() {
       username: user.username,
       role: user.role,
       password: '',
+      status: user.status,
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -111,10 +113,17 @@ export default function UserManagementPage() {
     setIsSaving(true);
     try {
       if (idYangDiedit !== null) {
-        const payload: { name: string; username: string; role: UserRole; password?: string } = {
+        const payload: {
+          name: string;
+          username: string;
+          role: UserRole;
+          status: UserStatus;
+          password?: string;
+        } = {
           name: formData.name.trim(),
           username: formData.username.trim(),
           role: formData.role,
+          status: formData.status,
         };
         if (formData.password.trim()) {
           payload.password = formData.password.trim();
@@ -389,6 +398,39 @@ export default function UserManagementPage() {
                   </div>
                 </div>
               </div>
+
+              {idYangDiedit && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-gray-300">Status User</label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        status: prev.status === 'active' ? 'inactive' : 'active',
+                      }))
+                    }
+                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] cursor-pointer focus:outline-none focus:border-[#B5884D]"
+                  >
+                    <span className="text-[#EAE1D8]">
+                      {formData.status === 'active' ? 'Aktif' : 'Non Aktif'}
+                    </span>
+                    <span
+                      className={`relative inline-block w-[44px] h-[24px] rounded-full transition-colors ${
+                        formData.status === 'active' ? 'bg-[#00FF2659] border border-[#79FF8D]' : 'bg-gray-700 border border-[#FF8080]'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-[2px] w-[18px] h-[18px] rounded-full transition-all ${
+                          formData.status === 'active'
+                            ? 'left-[22px] bg-[#79FF8D]'
+                            : 'left-[2px] bg-[#FF8080]'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-300">

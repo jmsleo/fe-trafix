@@ -160,21 +160,18 @@ export interface VehicleTypeBrief {
   id: string;
   code: string;
   name: string;
-  price: number | null;
   status: VehicleStatus;
 }
 
 export interface VehicleTypeCreate {
   code: string;
   name: string;
-  price?: number | null;
   status: VehicleStatus;
 }
 
 export interface VehicleTypeUpdate {
   code?: string | null;
   name?: string | null;
-  price?: number | null;
   status?: VehicleStatus | null;
 }
 
@@ -182,7 +179,6 @@ export interface VehicleTypeRead {
   id: string;
   code: string;
   name: string;
-  price: number | null;
   status: VehicleStatus;
   created_at: string;
   updated_at: string;
@@ -221,6 +217,7 @@ export interface MemberUpdate {
   card_number?: string | null;
   status?: MemberStatus | null;
   created_by?: string | null;
+  plan_id?: string | null;
 }
 
 export interface MemberRead {
@@ -278,6 +275,7 @@ export interface SubscriptionPlanCreate {
   name: string;
   duration_in_days: number;
   price: number;
+  vehicle_type_id: string;
   is_active?: boolean;
 }
 
@@ -285,6 +283,7 @@ export interface SubscriptionPlanUpdate {
   name?: string | null;
   duration_in_days?: number | null;
   price?: number | null;
+  vehicle_type_id?: string | null;
   is_active?: boolean | null;
 }
 
@@ -297,6 +296,8 @@ export interface SubscriptionPlanRead {
   name: string;
   duration_in_days: number;
   price: number;
+  vehicle_type_id: string;
+  vehicle_type: { id: string; code: string; name: string };
   is_active?: boolean;
   created_at: string;
   updated_at: string;
@@ -401,6 +402,12 @@ export interface OperatorBrief {
 export interface OperatorShiftAssignmentCreate {
   operator_id: string;
   shift_id: string;
+}
+
+export interface OperatorShiftAssignmentUpdate {
+  operator_id: string;
+  shift_id: string;
+  status: OperatorShiftAssignmentStatus;
 }
 
 export interface OperatorShiftAssignmentRead {

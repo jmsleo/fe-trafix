@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { useOperatorShiftAssignments, useCreateOperatorShiftAssignment, useDeleteOperatorShiftAssignment, useShifts } from '@/hooks/useShifts';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useOperatorShiftAssignments, useAllOperatorShiftAssignments, useCreateOperatorShiftAssignment, useUpdateOperatorShiftAssignment, useDeleteOperatorShiftAssignment, useShifts } from '@/hooks/useShifts';
 import { useUsers } from '@/hooks/useUsers';
-import type { OperatorShiftAssignmentRead } from '@/lib/api/types';
+import type { OperatorShiftAssignmentRead, OperatorShiftAssignmentStatus } from '@/lib/api/types';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
 function formatDate(iso: string): string {
@@ -15,46 +15,93 @@ function formatDate(iso: string): string {
   return `${dd} ${mon} ${yy}`;
 }
 
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const mon = months[d.getMonth()];
+  const yy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${dd} ${mon} ${yy} ${hh}:${mm}`;
+}
+
 export default function OperatorAssignmentPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
   const { data, isLoading, isError, error, refetch } = useOperatorShiftAssignments({ page, page_size: pageSize });
+  const { data: allAssignmentsData } = useAllOperatorShiftAssignments();
   const { data: shiftsData } = useShifts({ page_size: 100 });
   const { data: usersData } = useUsers({ page_size: 100, role: 'operator' });
 
   const createAssignment = useCreateOperatorShiftAssignment();
+  const updateAssignment = useUpdateOperatorShiftAssignment();
   const deleteAssignment = useDeleteOperatorShiftAssignment();
 
-  const items: OperatorShiftAssignmentRead[] = data?.items ?? [];
-  const total = data?.total ?? 0;
-  const totalPages = data?.total_pages ?? 1;
+  const items = useMemo(() => data?.items ?? [], [data]);
+  const total = useMemo(() => data?.total ?? 0, [data]);
+  const totalPages = useMemo(() => data?.total_pages ?? 1, [data]);
+  const allAssignments = useMemo(() => allAssignmentsData ?? [], [allAssignmentsData]);
 
-  const shifts = shiftsData?.items ?? [];
-  const operators = usersData?.items ?? [];
+  const activeShifts = useMemo(
+    () => (shiftsData?.items ?? []).filter((s) => s.status === 'active'),
+    [shiftsData],
+  );
+  const operators = useMemo(() => usersData?.items ?? [], [usersData]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<OperatorShiftAssignmentRead | null>(null);
+  const [isStatusActive, setIsStatusActive] = useState(true);
   const [selectedOperator, setSelectedOperator] = useState('');
   const [selectedShift, setSelectedShift] = useState('');
   const [deleteItem, setDeleteItem] = useState<OperatorShiftAssignmentRead | null>(null);
 
-  const handleCreate = useCallback(() => {
+  const openCreate = useCallback(() => {
+    setEditItem(null);
+    setIsStatusActive(true);
+    setSelectedOperator('');
+    setSelectedShift('');
+    setIsModalOpen(true);
+  }, []);
+
+  const openEdit = useCallback((item: OperatorShiftAssignmentRead) => {
+    setEditItem(item);
+    setIsStatusActive(item.status === 'active');
+    setSelectedOperator(item.operator_id);
+    setSelectedShift(item.shift_id);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleSave = useCallback(() => {
     if (!selectedOperator || !selectedShift) {
       alert('Operator dan Shift wajib dipilih!');
       return;
     }
-    createAssignment.mutate(
-      { operator_id: selectedOperator, shift_id: selectedShift },
-      {
-        onSuccess: () => {
-          setIsModalOpen(false);
-          setSelectedOperator('');
-          setSelectedShift('');
+
+    const status: OperatorShiftAssignmentStatus = isStatusActive ? 'active' : 'inactive';
+
+    if (editItem) {
+      updateAssignment.mutate(
+        {
+          id: editItem.id,
+          data: { operator_id: selectedOperator, shift_id: selectedShift, status },
         },
-        onError: (err) => alert(getApiErrorMessage(err, 'Gagal membuat assignment')),
-      },
-    );
-  }, [selectedOperator, selectedShift, createAssignment]);
+        {
+          onSuccess: () => setIsModalOpen(false),
+          onError: (err) => alert(getApiErrorMessage(err, 'Gagal mengupdate assignment')),
+        },
+      );
+    } else {
+      createAssignment.mutate(
+        { operator_id: selectedOperator, shift_id: selectedShift },
+        {
+          onSuccess: () => setIsModalOpen(false),
+          onError: (err) => alert(getApiErrorMessage(err, 'Gagal membuat assignment')),
+        },
+      );
+    }
+  }, [selectedOperator, selectedShift, isStatusActive, editItem, createAssignment, updateAssignment]);
 
   const handleDelete = useCallback(() => {
     if (!deleteItem) return;
@@ -64,13 +111,28 @@ export default function OperatorAssignmentPage() {
     });
   }, [deleteItem, deleteAssignment]);
 
+  const occupiedShiftIds = useMemo(
+    () =>
+      new Set(
+        allAssignments
+          .filter((a) => a.id !== (editItem?.id ?? null))
+          .map((a) => a.shift_id),
+      ),
+    [allAssignments, editItem],
+  );
+
+  const selectableShifts = useMemo(
+    () => activeShifts.filter((s) => !occupiedShiftIds.has(s.id)),
+    [activeShifts, occupiedShiftIds],
+  );
+
   return (
     <div className="space-y-4 relative">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <h1 className="text-[32px] font-bold text-[#EAE1D8] whitespace-nowrap leading-none">Operator Shift Assignment</h1>
         <button
-          onClick={() => { setSelectedOperator(''); setSelectedShift(''); setIsModalOpen(true); }}
+          onClick={openCreate}
           className="flex items-center justify-center gap-[6px] h-[44px] px-6 rounded-[9px] font-medium transition-opacity shrink-0 bg-gradient-to-r from-[#BF8F51] to-[#523D22] border border-[#BF8F51] text-[#17130E] shadow-lg hover:opacity-90 w-full md:w-auto md:px-6"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#17130E" className="flex-shrink-0">
@@ -92,19 +154,20 @@ export default function OperatorAssignmentPage() {
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">JAM</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">STATUS</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">TANGGAL DIBUAT</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">LAST UPDATE</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">AKSI</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data assignment...</td></tr>
+                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data assignment...</td></tr>
               ) : isError ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center bg-[#231F1A]">
+                <tr><td colSpan={8} className="px-6 py-8 text-center bg-[#231F1A]">
                   <p className="text-[#FF5656] text-sm mb-2">{getApiErrorMessage(error, 'Gagal memuat data assignment')}</p>
                   <button onClick={() => refetch()} className="text-[#B5884D] hover:text-[#EAE1D8] text-sm underline">Coba lagi</button>
                 </td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data assignment.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data assignment.</td></tr>
               ) : (
                 items.map((item, index) => (
                   <tr key={item.id} className={`${index % 2 === 0 ? 'bg-[#322A1F]' : 'bg-[#231F1A]'} hover:bg-[#3d3326] transition-colors border-b border-[#B5884D]/10`}>
@@ -123,8 +186,10 @@ export default function OperatorAssignmentPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap text-gray-400">{formatDate(item.created_at)}</td>
+                    <td className="px-6 py-4 text-center whitespace-nowrap text-gray-400">{formatDateTime(item.updated_at)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex justify-center">
+                      <div className="flex justify-center space-x-4">
+                        <button onClick={() => openEdit(item)} className="text-[#B5884D] hover:text-white transition-colors font-medium">Edit</button>
                         <button
                           onClick={() => setDeleteItem(item)}
                           className="text-[#FF5656] hover:text-white transition-colors font-medium"
@@ -184,20 +249,22 @@ export default function OperatorAssignmentPage() {
         </div>
       </div>
 
-      {/* Modal Create */}
+      {/* Modal Create/Edit */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-[#1C1814] border-2 border-[#B5884D] w-full max-w-[480px] rounded-[16px] shadow-2xl relative px-[32px] pt-[32px] pb-[32px]">
             <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-[#B5884D] hover:text-white transition-colors">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
-            <h2 className="text-[26px] font-bold text-[#B5884D] mb-8 tracking-wide">Tambah Assignment</h2>
+            <h2 className="text-[26px] font-bold text-[#B5884D] mb-8 tracking-wide">
+              {editItem ? 'Edit Assignment' : 'Tambah Assignment'}
+            </h2>
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[#EAE1D8] tracking-wide">Operator</label>
                 <select
                   value={selectedOperator}
-                  onChange={(e) => setSelectedOperator(e.target.value)}
+                  onChange={(e) => { setSelectedOperator(e.target.value); setSelectedShift(''); }}
                   className="w-full px-4 py-3 text-sm bg-[#0B0908] border border-[#B5884D]/60 rounded-[8px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] appearance-none"
                   style={{ colorScheme: 'dark' }}
                 >
@@ -216,20 +283,40 @@ export default function OperatorAssignmentPage() {
                   style={{ colorScheme: 'dark' }}
                 >
                   <option value="">Pilih Shift</option>
-                  {shifts.map((s) => (
+                  {selectableShifts.map((s) => (
                     <option key={s.id} value={s.id}>{s.name} ({s.start_time} - {s.finish_time})</option>
                   ))}
                 </select>
               </div>
+
+              {editItem && (
+                <div className="flex items-center justify-between gap-4 pt-2">
+                  <label className="text-sm font-medium text-[#EAE1D8] tracking-wide">Status Assignment</label>
+                  <div className="flex items-center gap-3">
+                    <div
+                      role="switch"
+                      aria-checked={isStatusActive}
+                      aria-label="Status assignment aktif atau non aktif"
+                      onClick={() => setIsStatusActive(!isStatusActive)}
+                      className={`w-[52px] h-[28px] rounded-full p-1 cursor-pointer transition-colors border flex items-center ${isStatusActive ? 'border-[#B5884D] bg-[#B5884D]' : 'border-gray-500 bg-transparent'}`}
+                    >
+                      <div className={`bg-[#EAE1D8] w-[20px] h-[20px] rounded-full shadow-md transform transition-transform ${isStatusActive ? 'translate-x-[22px]' : 'translate-x-0'}`}></div>
+                    </div>
+                    <span className={`text-[12px] font-bold tracking-wide w-[80px] ${isStatusActive ? 'text-[#79FF8D]' : 'text-[#FF8080]'}`}>
+                      {isStatusActive ? 'AKTIF' : 'NON AKTIF'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-end items-center gap-3 mt-10">
               <button onClick={() => setIsModalOpen(false)} className="px-7 py-2.5 text-sm font-bold text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors">Batal</button>
               <button
-                onClick={handleCreate}
-                disabled={createAssignment.isPending}
+                onClick={handleSave}
+                disabled={createAssignment.isPending || updateAssignment.isPending}
                 className="px-7 py-2.5 text-sm font-bold text-[#1A1612] bg-[#B5884D] rounded-[8px] hover:bg-[#c99a5a] transition-colors shadow-[0_0_10px_rgba(181,136,77,0.3)] disabled:opacity-50"
               >
-                {createAssignment.isPending ? 'Menyimpan...' : 'Simpan'}
+                {createAssignment.isPending || updateAssignment.isPending ? 'Menyimpan...' : 'Simpan'}
               </button>
             </div>
           </div>
