@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import Header from '../layout/Header';
+import Header from '../../layout/Header';
 import { useAuthEvents, useLogout, useMe } from '@/hooks/useAuth';
 import { usePosRefs, usePosSession, useQuote, useSettle, useManualTransaction, useVoid, useReprint, useReceipt, useEndPosSession } from '@/hooks/usePos';
 import { posEventStreamUrl, formatRupiah } from '@/lib/api/pos';

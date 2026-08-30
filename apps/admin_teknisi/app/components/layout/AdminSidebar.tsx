@@ -4,9 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
+import { useMe } from '@/hooks/useAuth';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const { data: me } = useMe();
+  const role = me?.role;
   
   // State untuk mengontrol Accordion dropdown menu (menyimpan index menu yang terbuka)
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
@@ -108,6 +111,10 @@ export default function AdminSidebar() {
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="M13.25 16.25 15.5 18.5"/></svg>
     },
   ];
+
+  if (role !== 'admin') {
+    return null;
+  }
 
   return (
     <aside className="w-[253px] ml-[20px] pt-[40px] flex flex-col shrink-0 min-h-screen">
