@@ -50,7 +50,7 @@ export interface VehicleTypeRef {
   id: string;
   code: string;
   name: string;
-  price: number | null;
+  base_price: number | null;
   wire_id: number | null;
   status: string;
 }

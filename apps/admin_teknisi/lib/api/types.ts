@@ -160,21 +160,18 @@ export interface VehicleTypeBrief {
   id: string;
   code: string;
   name: string;
-  price: number | null;
   status: VehicleStatus;
 }
 
 export interface VehicleTypeCreate {
   code: string;
   name: string;
-  price?: number | null;
   status: VehicleStatus;
 }
 
 export interface VehicleTypeUpdate {
   code?: string | null;
   name?: string | null;
-  price?: number | null;
   status?: VehicleStatus | null;
 }
 
@@ -182,7 +179,6 @@ export interface VehicleTypeRead {
   id: string;
   code: string;
   name: string;
-  price: number | null;
   status: VehicleStatus;
   created_at: string;
   updated_at: string;
