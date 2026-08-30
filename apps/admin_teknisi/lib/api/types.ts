@@ -217,6 +217,7 @@ export interface MemberUpdate {
   card_number?: string | null;
   status?: MemberStatus | null;
   created_by?: string | null;
+  plan_id?: string | null;
 }
 
 export interface MemberRead {
