@@ -233,6 +233,7 @@ export default function OperatorDashboardPage() {
         const res = await manualTx.mutateAsync({
           police_number: platKendaraan.trim(),
           vehicle_type_id: effectiveTypeId,
+          payment_method: metodeBayar,
         });
 setShowPaymentModal(false);
       setSettled({ code: res.data?.transaction_code ?? undefined, total: res.data?.total ?? undefined });
@@ -246,6 +247,7 @@ setShowPaymentModal(false);
         police_number: platKendaraan.trim() || null,
         lost_ticket: mode === 'lost',
         vehicle_type_id: effectiveTypeId,
+        payment_method: metodeBayar,
       });
       if (res.status !== 'success' || !res.data) {
         showToast('error', 'Gagal', res.message || 'Transaksi tidak dapat diselesaikan.');
@@ -339,7 +341,7 @@ setShowPaymentModal(false);
               <div className="flex justify-between items-center mb-2">
                 <h2 className="font-bold text-[18px] text-[#BF8F51] tracking-wide">Pilih Kendaraan</h2>
                 <div className="border border-[#10B981]/50 bg-[#00FF26]/10 text-[#10B981] text-[12px] px-3 py-1 rounded-full font-medium tracking-wide">
-                  Gunakan tombol F1-F10 pada keyboard
+                  Gunakan tombol F1-F8 pada keyboard
                 </div>
               </div>
               <div className="grid grid-cols-5 gap-3 mt-2 w-full">
@@ -367,32 +369,6 @@ setShowPaymentModal(false);
                     </button>
                   );
                 })}
-                <button
-                  onClick={() => setMode('manual')}
-                  className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex items-center justify-center whitespace-nowrap ${
-                    mode === 'manual'
-                      ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
-                      : 'border-dashed border-[#BF8F51]/70 text-[#BF8F51]/80 hover:bg-[#BF8F51]/10'
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <span className="font-bold">F9</span>
-                    <span>Tiket Manual</span>
-                  </span>
-                </button>
-                <button
-                  onClick={() => setMode('lost')}
-                  className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex items-center justify-center whitespace-nowrap ${
-                    mode === 'lost'
-                      ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
-                      : 'border-dashed border-[#BF8F51]/70 text-[#BF8F51]/80 hover:bg-[#BF8F51]/10'
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <span className="font-bold">F10</span>
-                    <span>Tiket Hilang</span>
-                  </span>
-                </button>
               </div>
             </div>
 
@@ -439,8 +415,27 @@ setShowPaymentModal(false);
               <div className="grid grid-cols-2 gap-[11px] w-full">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[13px] font-semibold text-[#BF8F51]/70">Mode Transaksi</label>
-                  <div className={`${inputCls} flex items-center`}>
-                    {mode === 'manual' ? 'TIKET MANUAL (F9)' : mode === 'lost' ? 'TIKET HILANG (F10)' : quoteData?.member ? `MEMBER · ${quoteData.name ?? ''}` : 'NORMAL'}
+                  <div className="flex gap-2">
+                    {([
+                      { key: 'normal' as Mode, label: 'STANDAR', hint: '' },
+                      { key: 'manual' as Mode, label: 'MANUAL', hint: 'F9' },
+                      { key: 'lost' as Mode, label: 'HILANG', hint: 'F10' },
+                    ]).map((opt) => (
+                      <button
+                        key={opt.key}
+                        onClick={() => setMode(opt.key)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 h-[36px] rounded-[9px] border text-[13px] font-bold transition ${
+                          mode === opt.key
+                            ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51]'
+                            : 'bg-black/60 border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {opt.hint && (
+                          <span className={`text-[10px] ${mode === opt.key ? 'text-[#17130E]/70' : 'opacity-70'}`}>{opt.hint}</span>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
