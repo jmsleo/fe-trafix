@@ -340,6 +340,7 @@ export default function DaftarMemberPage() {
               <tr>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">No.<br/>MEMBER</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">NAMA LENGKAP</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">NO. KARTU</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">NO. PLAT<br/>KENDARAAN</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">JENIS KENDARAAN</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">STATUS</th>
@@ -349,14 +350,14 @@ export default function DaftarMemberPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data member...</td></tr>
+                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data member...</td></tr>
               ) : isError ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center bg-[#231F1A]">
+                <tr><td colSpan={8} className="px-6 py-8 text-center bg-[#231F1A]">
                   <span className="text-[#FF5656]">Gagal memuat data.</span>{' '}
                   <button onClick={() => refetch()} className="text-[#B5884D] hover:underline">Coba lagi</button>
                 </td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data member.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data member.</td></tr>
               ) : (
                 items.map((m, index) => {
                   const sub = getActiveSubscription(m.subscriptions);
@@ -368,8 +369,9 @@ export default function DaftarMemberPage() {
                   const label = m.status === 'active' ? 'AKTIF' : m.status === 'inactive' ? 'NON AKTIF' : 'TERBLOKIR';
                   return (
                     <tr key={m.id} className={`${index % 2 === 0 ? 'bg-[#322A1F]' : 'bg-[#231F1A]'} hover:bg-[#3d3326] transition-colors border-b border-[#B5884D]/10`}>
-                      <td className="px-6 py-4 text-center whitespace-nowrap text-gray-300">{m.card_number ?? m.member_code}</td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap text-gray-300">{m.member_code}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">{m.name}</td>
+                      <td className="px-6 py-4 text-center whitespace-nowrap">{m.card_number ?? '-'}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">{m.vehicles?.[0]?.police_number ?? '-'}</td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">{m.vehicles?.[0]?.vehicle_type?.name ?? '-'}</td>
 
