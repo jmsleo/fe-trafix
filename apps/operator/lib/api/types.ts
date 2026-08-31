@@ -115,6 +115,8 @@ export interface PosQuoteRequest {
   vehicle_type_id?: string | null;
   // Price a manual ticket even though no transaction exists yet.
   manual?: boolean;
+  // Payment method chosen by the cashier (TUNAI / QRIS / E-MONEY).
+  payment_method?: string | null;
 }
 
 export interface PosQuoteData {
@@ -194,4 +196,5 @@ export interface PosManualRequest {
   vehicle_id?: number | null;
   vehicle_type_id?: string | null;
   total?: number | null;
+  payment_method?: string | null;
 }
