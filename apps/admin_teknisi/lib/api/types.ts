@@ -218,6 +218,8 @@ export interface MemberUpdate {
   status?: MemberStatus | null;
   created_by?: string | null;
   plan_id?: string | null;
+  police_number?: string | null;
+  vehicle_type_id?: string | null;
 }
 
 export interface MemberRead {

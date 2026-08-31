@@ -198,18 +198,19 @@ export default function DaftarMemberPage() {
         setFormError('No. Member hanya boleh berupa angka.');
         return;
       }
-      if (!policeNumber) {
-        setFormError('No. plat kendaraan wajib diisi.');
-        return;
-      }
-      if (!formData.vehicle_type_id) {
-        setFormError('Jenis kendaraan wajib dipilih.');
-        return;
-      }
-      if (!formData.plan_id) {
-        setFormError('Paket membership wajib dipilih.');
-        return;
-      }
+    }
+
+    if (!policeNumber) {
+      setFormError('No. plat kendaraan wajib diisi.');
+      return;
+    }
+    if (!formData.vehicle_type_id) {
+      setFormError('Jenis kendaraan wajib dipilih.');
+      return;
+    }
+    if (idYangDiedit === null && !formData.plan_id) {
+      setFormError('Paket membership wajib dipilih.');
+      return;
     }
 
     const statusTerbaru: MemberStatus = isStatusActive ? 'active' : 'inactive';
@@ -226,6 +227,8 @@ export default function DaftarMemberPage() {
             card_number: cardNumber || undefined,
             status: statusTerbaru,
             plan_id: formData.plan_id || undefined,
+            police_number: policeNumber,
+            vehicle_type_id: formData.vehicle_type_id,
           },
         });
       } else {
@@ -455,13 +458,13 @@ export default function DaftarMemberPage() {
 
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-[#EAE1D8]">No. Plat Kendaraan</label>
-                  <input type="text" name="police_number" value={formData.police_number} onChange={handleInputChange} disabled={idYangDiedit !== null} className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] uppercase disabled:cursor-not-allowed disabled:bg-[#1A1612] disabled:border-[#B5884D]/30 disabled:text-gray-500" />
+                  <input type="text" name="police_number" value={formData.police_number} onChange={handleInputChange} className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] uppercase" />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-[#EAE1D8]">Jenis Kendaraan</label>
                   <div className="relative">
-                    <select name="vehicle_type_id" value={formData.vehicle_type_id} onChange={handleInputChange} disabled={idYangDiedit !== null} className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] cursor-pointer disabled:cursor-not-allowed disabled:bg-[#1A1612] disabled:border-[#B5884D]/30 disabled:text-gray-500">
+                    <select name="vehicle_type_id" value={formData.vehicle_type_id} onChange={handleInputChange} className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D] cursor-pointer">
                       <option value="">Pilih Kendaraan</option>
                       {(vehicleTypesData?.items ?? []).map((vt) => (
                         <option key={vt.id} value={vt.id}>{vt.name}</option>
