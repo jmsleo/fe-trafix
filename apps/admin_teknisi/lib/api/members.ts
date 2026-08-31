@@ -50,6 +50,11 @@ export async function blockMember(memberId: string): Promise<MemberRead> {
   return response.data;
 }
 
+export async function unblockMember(memberId: string): Promise<MemberRead> {
+  const response = await apiClient.patch<MemberRead>(`/members/${memberId}/unblock`);
+  return response.data;
+}
+
 // ---------------------------------------------------------------------------
 // Subscription Plans
 // ---------------------------------------------------------------------------

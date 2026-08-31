@@ -3,10 +3,12 @@
 import Button from '@/app/components/ui/Button';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  useBlockMember,
   useCreateMember,
   useDeleteMember,
   useMembers,
   useSubscriptionPlans,
+  useUnblockMember,
   useUpdateMember,
 } from '@/hooks/useMembers';
 import { useVehicleTypes } from '@/hooks/useVehicleTypes';
@@ -107,6 +109,8 @@ export default function DaftarMemberPage() {
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
+  const blockMember = useBlockMember();
+  const unblockMember = useUnblockMember();
 
   // 3. STATE MODAL FORM
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -118,6 +122,10 @@ export default function DaftarMemberPage() {
 
   // 4. STATE MODAL HAPUS
   const [itemYangDihapus, setItemYangDihapus] = useState<MemberRead | null>(null);
+
+  // 5. STATE MODAL BLOKIR / BUKA BLOKIR
+  const [itemYangDiubahStatus, setItemYangDiubahStatus] = useState<MemberRead | null>(null);
+  const [isBlockAction, setIsBlockAction] = useState(true);
 
   const selectedPlan = plansData?.items?.find((p) => p.id === formData.plan_id);
 
@@ -263,6 +271,13 @@ export default function DaftarMemberPage() {
     }
   };
 
+  const eksekusiUbahStatus = () => {
+    if (itemYangDiubahStatus === null) return;
+    const id = itemYangDiubahStatus.id;
+    const mutate = isBlockAction ? blockMember : unblockMember;
+    mutate.mutate(id, { onSuccess: () => setItemYangDiubahStatus(null) });
+  };
+
   const items = [...(data?.items ?? [])].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
@@ -382,6 +397,21 @@ export default function DaftarMemberPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex justify-center space-x-4">
                           <button onClick={() => handleKlikEdit(m)} className="text-[#B5884D] hover:text-white transition-colors">Edit</button>
+                          {m.status === 'blocked' ? (
+                            <button
+                              onClick={() => { setIsBlockAction(false); setItemYangDiubahStatus(m); }}
+                              className="text-[#79FF8D] hover:text-white transition-colors"
+                            >
+                              Buka Blokir
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => { setIsBlockAction(true); setItemYangDiubahStatus(m); }}
+                              className="text-[#FFB74D] hover:text-white transition-colors"
+                            >
+                              Blokir
+                            </button>
+                          )}
                           <button onClick={() => setItemYangDihapus(m)} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
                         </div>
                       </td>
@@ -617,6 +647,40 @@ export default function DaftarMemberPage() {
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiHapus} disabled={deleteMember.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors whitespace-nowrap disabled:opacity-50">
                 {deleteMember.isPending ? 'Menghapus...' : 'Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================= */}
+      {/* MODAL KONFIRMASI BLOKIR / BUKA BLOKIR     */}
+      {/* ========================================= */}
+      {itemYangDiubahStatus !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#17130E] border border-[#B5884D] w-full max-w-md rounded-[14px] shadow-2xl p-6 relative animate-in fade-in zoom-in duration-200">
+            <button onClick={() => setItemYangDiubahStatus(null)} className="absolute top-5 right-5 text-[#B5884D] hover:text-white transition-colors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className={isBlockAction ? 'text-[#FFB74D]' : 'text-[#79FF8D]'}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <h2 className="text-[22px] font-bold text-[#B5884D]">{isBlockAction ? 'Blokir Member' : 'Buka Blokir Member'}</h2>
+            </div>
+            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+              {isBlockAction ? (
+                <>Apakah Anda yakin ingin memblokir Member <span className="text-[#B5884D] font-bold">{itemYangDiubahStatus.name}</span>? Member yang diblokir tidak dapat mengakses layanan.</>
+              ) : (
+                <>Apakah Anda yakin ingin membuka blokir Member <span className="text-[#B5884D] font-bold">{itemYangDiubahStatus.name}</span>?</>
+              )}
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => setItemYangDiubahStatus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
+              <button onClick={eksekusiUbahStatus} disabled={isBlockAction ? blockMember.isPending : unblockMember.isPending} className={`px-6 py-2.5 text-sm font-medium text-white rounded-[8px] transition-colors whitespace-nowrap disabled:opacity-50 ${isBlockAction ? 'bg-[#6e4f1a] border border-[#FFB74D]/50 hover:bg-[#8a6522]' : 'bg-[#2f6e3a] border border-[#79FF8D]/50 hover:bg-[#3a8448]'}`}>
+                {isBlockAction
+                  ? (blockMember.isPending ? 'Memblokir...' : 'Blokir')
+                  : (unblockMember.isPending ? 'Membuka Blokir...' : 'Buka Blokir')}
               </button>
             </div>
           </div>

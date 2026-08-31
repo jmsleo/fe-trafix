@@ -16,6 +16,7 @@ import {
   listMembers,
   listMemberSubscriptions,
   listSubscriptionPlans,
+  unblockMember,
   updateMember,
   updateSubscriptionPlan,
   updateSubscriptionPlanStatus,
@@ -87,6 +88,14 @@ export function useBlockMember() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => blockMember(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.all }),
+  });
+}
+
+export function useUnblockMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unblockMember(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.all }),
   });
 }
