@@ -196,15 +196,9 @@ export default function DaftarMemberPage() {
       return;
     }
 
-    if (idYangDiedit === null) {
-      if (!cardNumber) {
-        setFormError('No. Member (No. Kartu) wajib diisi.');
-        return;
-      }
-      if (!/^\d+$/.test(cardNumber)) {
-        setFormError('No. Member hanya boleh berupa angka.');
-        return;
-      }
+    if (idYangDiedit === null && cardNumber && !/^\d+$/.test(cardNumber)) {
+      setFormError('No. Member hanya boleh berupa angka.');
+      return;
     }
 
     if (!policeNumber) {
