@@ -483,18 +483,12 @@ setShowPaymentModal(false);
 
             {/* TOMBOL UTILITIES */}
             <div className="flex justify-between items-center w-full gap-[8px]">
-              <button onClick={() => setReprintModal(true)} className="flex-1 border border-[#BF8F51] text-[#BF8F51] font-bold text-[15px] px-3 py-[7px] rounded-[8px] hover:bg-[#BF8F51]/10 transition">
-                Re-print Struk
-              </button>
               <div className="flex-1 border border-[#BF8F51] text-[#BF8F51] font-bold text-[15px] px-3 py-[7px] rounded-[8px] text-center">
                 {session?.shift?.name ?? '-'}
               </div>
               <div className="flex-1 border border-[#BF8F51] text-[#BF8F51] font-bold text-[15px] px-3 py-[7px] rounded-[8px] text-center">
                 {me?.name ?? 'Operator'}
               </div>
-              <button onClick={handleLogout} className="flex-1 border border-[#BF8F51] text-[#BF8F51] font-bold text-[15px] px-3 py-[7px] rounded-[8px] hover:bg-[#BF8F51]/10 transition flex items-center justify-center gap-1.5">
-                Keluar
-              </button>
             </div>
 
             {/* STATUS GATE */}
