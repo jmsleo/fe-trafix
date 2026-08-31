@@ -42,6 +42,16 @@ export interface PaginationMeta {
 // Dashboard (hanya hari ini, WIB)
 // ---------------------------------------------------------------------------
 
+export interface DashboardShiftItem {
+  id: string;
+  name: string;
+}
+
+export interface DashboardFilterParams {
+  date?: string;     // YYYY-MM-DD
+  shift_id?: string; // UUID
+}
+
 export interface RevenueTodayResponse {
   date: string;
   total_revenue: number;
@@ -50,6 +60,7 @@ export interface RevenueTodayResponse {
 
 export interface RevenueByShiftItem {
   exit_shift_id: string | null;
+  shift_name: string | null;
   total_revenue: number;
   total_transactions: number;
 }

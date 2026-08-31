@@ -1,7 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import type { DashboardFilterParams } from '@/lib/api/types';
 import {
+  getDashboardShifts,
   getExecutiveInsight,
   getPaymentDistribution,
   getRevenueByShift,
@@ -11,44 +13,57 @@ import {
 
 export const financeDashboardKeys = {
   all: ['finance-dashboard'] as const,
-  revenueToday: () => [...financeDashboardKeys.all, 'revenue-today'] as const,
-  revenueByShift: () => [...financeDashboardKeys.all, 'revenue-by-shift'] as const,
-  vehicleDistribution: () => [...financeDashboardKeys.all, 'vehicle-distribution'] as const,
-  paymentDistribution: () => [...financeDashboardKeys.all, 'payment-distribution'] as const,
-  executiveInsight: () => [...financeDashboardKeys.all, 'executive-insight'] as const,
+  shifts: () => [...financeDashboardKeys.all, 'shifts'] as const,
+  revenueToday: (params?: DashboardFilterParams) =>
+    [...financeDashboardKeys.all, 'revenue-today', params] as const,
+  revenueByShift: (params?: DashboardFilterParams) =>
+    [...financeDashboardKeys.all, 'revenue-by-shift', params] as const,
+  vehicleDistribution: (params?: DashboardFilterParams) =>
+    [...financeDashboardKeys.all, 'vehicle-distribution', params] as const,
+  paymentDistribution: (params?: DashboardFilterParams) =>
+    [...financeDashboardKeys.all, 'payment-distribution', params] as const,
+  executiveInsight: (params?: DashboardFilterParams) =>
+    [...financeDashboardKeys.all, 'executive-insight', params] as const,
 };
 
-export function useRevenueToday() {
+export function useDashboardShifts() {
   return useQuery({
-    queryKey: financeDashboardKeys.revenueToday(),
-    queryFn: getRevenueToday,
+    queryKey: financeDashboardKeys.shifts(),
+    queryFn: getDashboardShifts,
   });
 }
 
-export function useRevenueByShift() {
+export function useRevenueToday(params?: DashboardFilterParams) {
   return useQuery({
-    queryKey: financeDashboardKeys.revenueByShift(),
-    queryFn: getRevenueByShift,
+    queryKey: financeDashboardKeys.revenueToday(params),
+    queryFn: () => getRevenueToday(params),
   });
 }
 
-export function useVehicleDistribution() {
+export function useRevenueByShift(params?: DashboardFilterParams) {
   return useQuery({
-    queryKey: financeDashboardKeys.vehicleDistribution(),
-    queryFn: getVehicleDistribution,
+    queryKey: financeDashboardKeys.revenueByShift(params),
+    queryFn: () => getRevenueByShift(params),
   });
 }
 
-export function usePaymentDistribution() {
+export function useVehicleDistribution(params?: DashboardFilterParams) {
   return useQuery({
-    queryKey: financeDashboardKeys.paymentDistribution(),
-    queryFn: getPaymentDistribution,
+    queryKey: financeDashboardKeys.vehicleDistribution(params),
+    queryFn: () => getVehicleDistribution(params),
   });
 }
 
-export function useExecutiveInsight() {
+export function usePaymentDistribution(params?: DashboardFilterParams) {
   return useQuery({
-    queryKey: financeDashboardKeys.executiveInsight(),
-    queryFn: getExecutiveInsight,
+    queryKey: financeDashboardKeys.paymentDistribution(params),
+    queryFn: () => getPaymentDistribution(params),
+  });
+}
+
+export function useExecutiveInsight(params?: DashboardFilterParams) {
+  return useQuery({
+    queryKey: financeDashboardKeys.executiveInsight(params),
+    queryFn: () => getExecutiveInsight(params),
   });
 }

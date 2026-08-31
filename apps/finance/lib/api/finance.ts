@@ -1,5 +1,7 @@
 import { apiClient } from './client';
 import type {
+  DashboardFilterParams,
+  DashboardShiftItem,
   ExecutiveInsightResponse,
   GateEventReportParams,
   GateEventReportResponse,
@@ -25,28 +27,33 @@ import type {
 // Dashboard
 // ---------------------------------------------------------------------------
 
-export async function getRevenueToday(): Promise<RevenueTodayResponse> {
-  const response = await apiClient.get<RevenueTodayResponse>('/finance/dashboard/revenue/today');
+export async function getDashboardShifts(): Promise<DashboardShiftItem[]> {
+  const response = await apiClient.get<DashboardShiftItem[]>('/finance/dashboard/shifts');
   return response.data;
 }
 
-export async function getRevenueByShift(): Promise<RevenueByShiftResponse> {
-  const response = await apiClient.get<RevenueByShiftResponse>('/finance/dashboard/revenue/shift');
+export async function getRevenueToday(params?: DashboardFilterParams): Promise<RevenueTodayResponse> {
+  const response = await apiClient.get<RevenueTodayResponse>('/finance/dashboard/revenue/today', { params });
   return response.data;
 }
 
-export async function getVehicleDistribution(): Promise<VehicleDistributionResponse> {
-  const response = await apiClient.get<VehicleDistributionResponse>('/finance/dashboard/vehicle-distribution');
+export async function getRevenueByShift(params?: DashboardFilterParams): Promise<RevenueByShiftResponse> {
+  const response = await apiClient.get<RevenueByShiftResponse>('/finance/dashboard/revenue/shift', { params });
   return response.data;
 }
 
-export async function getPaymentDistribution(): Promise<PaymentDistributionResponse> {
-  const response = await apiClient.get<PaymentDistributionResponse>('/finance/dashboard/payment-distribution');
+export async function getVehicleDistribution(params?: DashboardFilterParams): Promise<VehicleDistributionResponse> {
+  const response = await apiClient.get<VehicleDistributionResponse>('/finance/dashboard/vehicle-distribution', { params });
   return response.data;
 }
 
-export async function getExecutiveInsight(): Promise<ExecutiveInsightResponse> {
-  const response = await apiClient.get<ExecutiveInsightResponse>('/finance/dashboard/executive-insight');
+export async function getPaymentDistribution(params?: DashboardFilterParams): Promise<PaymentDistributionResponse> {
+  const response = await apiClient.get<PaymentDistributionResponse>('/finance/dashboard/payment-distribution', { params });
+  return response.data;
+}
+
+export async function getExecutiveInsight(params?: DashboardFilterParams): Promise<ExecutiveInsightResponse> {
+  const response = await apiClient.get<ExecutiveInsightResponse>('/finance/dashboard/executive-insight', { params });
   return response.data;
 }
 

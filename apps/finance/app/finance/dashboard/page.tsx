@@ -1,14 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  useDashboardShifts,
   useExecutiveInsight,
   usePaymentDistribution,
   useRevenueByShift,
   useRevenueToday,
   useVehicleDistribution,
 } from '@/hooks/useFinanceDashboard';
+import type { DashboardFilterParams } from '@/lib/api/types';
 import { formatRupiah } from '@/lib/format';
+
+function todayWib(): string {
+  // Format YYYY-MM-DD dalam zona waktu lokal
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 const PIE_COLORS = ['#BF8F51', '#866236', '#42301A', '#9CA3AF', '#4B5563', '#D9B380'];
 
@@ -26,13 +35,25 @@ export default function DashboardPage() {
   // Class bawaan untuk card dengan Radial Gradient: Hitam di tengah (#110C08), memudar ke coklat transparan di pinggir
   const radialCardClass = "bg-[radial-gradient(ellipse_at_center,_#110C08_0%,_rgba(191,143,81,0.18)_100%)] border border-[#BF8F51]/40 rounded-[10px] p-5 flex flex-col hover:border-[#BF8F51] transition-colors";
 
-  const { data: revenueToday, isLoading: revenueLoading } = useRevenueToday();
-  const { data: revenueShift } = useRevenueByShift();
-  const { data: vehicleDist } = useVehicleDistribution();
-  const { data: paymentDist } = usePaymentDistribution();
-  const { data: insight } = useExecutiveInsight();
+  const [selectedDate, setSelectedDate] = useState(todayWib());
+  const [selectedShiftId, setSelectedShiftId] = useState('');
 
-  const shifts = (revenueShift?.shifts ?? []).slice(0, 3);
+  const filterParams = useMemo<DashboardFilterParams>(
+    () => ({
+      ...(selectedDate ? { date: selectedDate } : {}),
+      ...(selectedShiftId ? { shift_id: selectedShiftId } : {}),
+    }),
+    [selectedDate, selectedShiftId],
+  );
+
+  const { data: dashboardShifts } = useDashboardShifts();
+  const { data: revenueToday, isLoading: revenueLoading } = useRevenueToday(filterParams);
+  const { data: revenueShift } = useRevenueByShift(filterParams);
+  const { data: vehicleDist } = useVehicleDistribution(filterParams);
+  const { data: paymentDist } = usePaymentDistribution(filterParams);
+  const { data: insight } = useExecutiveInsight(filterParams);
+
+  const shifts = revenueShift?.shifts ?? [];
   const vehicleSegments = (vehicleDist?.distribution ?? []).filter((d) => d.percentage > 0);
   const paymentSegments = (paymentDist?.distribution ?? []).filter((d) => d.percentage > 0);
   const topVehicle = vehicleSegments.reduce<(typeof vehicleSegments)[number] | null>(
@@ -46,14 +67,11 @@ export default function DashboardPage() {
       value: revenueLoading ? '…' : formatRupiah(revenueToday?.total_revenue ?? 0),
       desc: revenueToday ? `Hari ini, ${revenueToday.date}` : 'Hari ini',
     },
-    ...[0, 1, 2].map((idx) => {
-      const shift = shifts[idx];
-      return {
-        title: shift ? `Shift ${idx + 1}` : `Shift ${idx + 1}`,
-        value: formatRupiah(shift?.total_revenue ?? 0),
-        desc: `${shift?.total_transactions ?? 0} transaksi`,
-      };
-    }),
+    ...shifts.map((shift, idx) => ({
+      title: shift.shift_name ?? `Shift ${idx + 1}`,
+      value: formatRupiah(shift?.total_revenue ?? 0),
+      desc: `${shift?.total_transactions ?? 0} transaksi`,
+    })),
   ];
 
   const pendingTickets = insight?.total_pending_tickets ?? 0;
@@ -68,17 +86,29 @@ export default function DashboardPage() {
       <div className="border border-[#BF8F51]/40 rounded-[10px] p-4 flex items-center justify-between mb-2">
 
         <div className="flex items-center gap-4">
-          {/* Button Pilih Tanggal (Disesuaikan dengan gambar: ikon di kanan, garis & warna BF8F51) */}
-          <button className="flex items-center justify-end w-[110px] px-3 py-2 bg-transparent border border-[#BF8F51] rounded-[7px] text-[#BF8F51] hover:bg-[#BF8F51]/10 transition-colors" title="Data dashboard menampilkan hari ini (WIB)">
-            {/* Anda bisa menambahkan teks/variabel tanggal di sebelah kiri ikon nantinya */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          </button>
+          {/* Input Pilih Tanggal (native date picker, diwarnai sesuai tema) */}
+          <div className="relative">
+            <svg className="absolute left-3 top-2.5 text-[#BF8F51] pointer-events-none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-[150px] pl-9 pr-3 py-2 bg-transparent border border-[#BF8F51] rounded-[7px] text-sm text-[#BF8F51] outline-none focus:border-[#BF8F51] [color-scheme:dark] transition-colors"
+            />
+          </div>
 
-          {/* Select Shift (Warna teks dan panah menjadi BF8F51) */}
-          <select className="px-4 py-2 bg-transparent border border-[#BF8F51] rounded-[7px] text-sm text-[#BF8F51] appearance-none outline-none focus:border-[#BF8F51] cursor-pointer w-40 transition-colors">
-            <option className="bg-[#14110E]">Semua Shift</option>
-            <option className="bg-[#14110E]">Shift 1</option>
-            <option className="bg-[#14110E]">Shift 2</option>
+          {/* Select Shift (dinamis dari daftar shift aktif yang dibuat admin) */}
+          <select
+            value={selectedShiftId}
+            onChange={(e) => setSelectedShiftId(e.target.value)}
+            className="px-4 py-2 bg-transparent border border-[#BF8F51] rounded-[7px] text-sm text-[#BF8F51] appearance-none outline-none focus:border-[#BF8F51] cursor-pointer w-48 transition-colors"
+          >
+            <option className="bg-[#14110E]" value="">Semua Shift</option>
+            {(dashboardShifts ?? []).map((shift) => (
+              <option key={shift.id} className="bg-[#14110E]" value={shift.id}>
+                {shift.name}
+              </option>
+            ))}
           </select>
         </div>
 
