@@ -11,7 +11,7 @@ import {
 } from '@/hooks/useMembers';
 import { useVehicleTypes } from '@/hooks/useVehicleTypes';
 import { getApiErrorMessage } from '@/lib/api/errors';
-import type { MemberRead, MemberStatus } from '@/lib/api/types';
+import type { MemberRead, MemberStatus, MemberSubscriptionBrief } from '@/lib/api/types';
 
 interface MemberForm {
   name: string;
@@ -60,6 +60,13 @@ function hitungSisaHari(endDate: string): number {
   const end = new Date(endDate).getTime();
   const now = Date.now();
   return Math.max(0, Math.ceil((end - now) / 86400000));
+}
+
+function getActiveSubscription(
+  subs?: MemberSubscriptionBrief[],
+): MemberSubscriptionBrief | undefined {
+  if (!subs || subs.length === 0) return undefined;
+  return subs.find((s) => s.status === 'active') ?? subs[0];
 }
 
 function formatRupiah(value: number): string {
@@ -126,7 +133,7 @@ export default function DaftarMemberPage() {
     return (data?.items ?? []).find((m) => m.id === idYangDiedit) ?? null;
   }, [idYangDiedit, data]);
 
-  const currentSub = editedMember?.subscriptions?.[0];
+  const currentSub = getActiveSubscription(editedMember?.subscriptions);
   const todayStr = new Date().toISOString().split('T')[0];
 
   const handleKlikTambah = () => {
@@ -138,7 +145,7 @@ export default function DaftarMemberPage() {
   };
 
   const handleKlikEdit = (member: MemberRead) => {
-    const sub = member.subscriptions?.[0];
+    const sub = getActiveSubscription(member.subscriptions);
     const vehicle = member.vehicles?.[0];
     setIdYangDiedit(member.id);
     setFormData({
@@ -352,7 +359,7 @@ export default function DaftarMemberPage() {
                 <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data member.</td></tr>
               ) : (
                 items.map((m, index) => {
-                  const sub = m.subscriptions?.[0];
+                  const sub = getActiveSubscription(m.subscriptions);
                   const badge = m.status === 'active'
                     ? 'border-[#79FF8D] bg-[#00FF2659] text-[#79FF8D]'
                     : m.status === 'inactive'
