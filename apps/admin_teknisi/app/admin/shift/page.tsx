@@ -11,6 +11,19 @@ function minutesOf(t: string): number {
   return h * 60 + (m || 0);
 }
 
+function formatLastUpdate(iso?: string): string {
+  if (!iso) return '-';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function shiftsOverlap(
   aStart: string,
   aFinish: string,
@@ -230,19 +243,20 @@ export default function ShiftPage() {
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">JAM MULAI</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">JAM SELESAI</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">STATUS</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">LAST UPDATE</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center whitespace-nowrap">AKSI</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data shift...</td></tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Memuat data shift...</td></tr>
               ) : isError ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center bg-[#231F1A]">
+                <tr><td colSpan={6} className="px-6 py-8 text-center bg-[#231F1A]">
                   <p className="text-[#FF5656] text-sm mb-2">{getApiErrorMessage(error, 'Gagal memuat data shift')}</p>
                   <button onClick={() => refetch()} className="text-[#B5884D] hover:text-[#EAE1D8] text-sm underline">Coba lagi</button>
                 </td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data shift.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500 bg-[#231F1A]">Belum ada data shift.</td></tr>
               ) : (
                 items.map((s, index) => (
                   <tr key={s.id} className={`${index % 2 === 0 ? 'bg-[#322A1F]' : 'bg-[#231F1A]'} hover:bg-[#3d3326] transition-colors border-b border-[#B5884D]/10`}>
@@ -259,6 +273,7 @@ export default function ShiftPage() {
                         {formatStatus(s.status)}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-400">{formatLastUpdate(s.updated_at)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center space-x-4">
                         <button onClick={() => handleEdit(s)} className="text-[#B5884D] hover:text-white transition-colors">Edit</button>
