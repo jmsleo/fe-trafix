@@ -10,10 +10,16 @@ import type {
   PosSettleResponse,
   PosVoidRequest,
   SessionStartRequest,
+  ShiftRef,
 } from './types';
 
 export async function getPosRefs(): Promise<PosRefs> {
   const response = await apiClient.get<PosRefs>('/api/pos/refs');
+  return response.data;
+}
+
+export async function getMyAssignedShifts(): Promise<ShiftRef[]> {
+  const response = await apiClient.get<ShiftRef[]>('/operator-shifts/me');
   return response.data;
 }
 
