@@ -61,6 +61,7 @@ export default function VehicleTypePage() {
   const [idYangDiedit, setIdYangDiedit] = useState<string | null>(null);
   const [formData, setFormData] = useState<VehicleTypeForm>(emptyForm);
   const [itemYangDihapus, setItemYangDihapus] = useState<VehicleTypeRead | null>(null);
+  const [hapusError, setHapusError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -129,7 +130,11 @@ export default function VehicleTypePage() {
   const eksekusiHapus = () => {
     if (itemYangDihapus !== null) {
       deleteVehicle.mutate(itemYangDihapus.id, {
-        onSuccess: () => setItemYangDihapus(null),
+        onSuccess: () => {
+          setItemYangDihapus(null);
+          setHapusError(null);
+        },
+        onError: (err) => setHapusError(getApiErrorMessage(err, 'Gagal menghapus jenis kendaraan.')),
       });
     }
   };
@@ -235,7 +240,7 @@ export default function VehicleTypePage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center space-x-4">
                         <button onClick={() => handleKlikEdit(v)} className="text-[#B5884D] hover:text-white transition-colors">Edit</button>
-                        <button onClick={() => setItemYangDihapus(v)} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
+                        <button onClick={() => { setItemYangDihapus(v); setHapusError(null); }} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
                       </div>
                     </td>
                   </tr>
@@ -363,9 +368,10 @@ export default function VehicleTypePage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">Hapus Jenis Kendaraan</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               Apakah Anda yakin ingin menghapus <span className="text-[#B5884D] font-bold uppercase">{itemYangDihapus.code} - {itemYangDihapus.name}</span>? Aksi ini akan menghapus di list secara instan.
             </p>
+            {hapusError && <p className="text-sm text-[#FF5656] mb-4">{hapusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiHapus} disabled={deleteVehicle.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors whitespace-nowrap disabled:opacity-50">

@@ -80,6 +80,7 @@ export default function KontenSignagePage() {
   const [idYangDiedit, setIdYangDiedit] = useState<string | null>(null);
   const [formData, setFormData] = useState<ContentForm>(emptyForm);
   const [itemYangDihapus, setItemYangDihapus] = useState<SignageContentRead | null>(null);
+  const [hapusError, setHapusError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -181,7 +182,11 @@ export default function KontenSignagePage() {
   const eksekusiHapus = () => {
     if (itemYangDihapus !== null) {
       deleteContent.mutate(itemYangDihapus.id, {
-        onSuccess: () => setItemYangDihapus(null),
+        onSuccess: () => {
+          setItemYangDihapus(null);
+          setHapusError(null);
+        },
+        onError: (err) => setHapusError(getApiErrorMessage(err, 'Gagal menghapus konten.')),
       });
     }
   };
@@ -314,7 +319,7 @@ export default function KontenSignagePage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center space-x-4">
                         <button onClick={() => handleKlikEdit(c)} className="text-[#B5884D] hover:text-white transition-colors">Edit</button>
-                        <button onClick={() => setItemYangDihapus(c)} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
+                        <button onClick={() => { setItemYangDihapus(c); setHapusError(null); }} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
                       </div>
                     </td>
                   </tr>
@@ -423,9 +428,10 @@ export default function KontenSignagePage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">Hapus Konten</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               Apakah Anda yakin ingin menghapus konten <span className="text-[#B5884D] font-bold">{itemYangDihapus.title}</span>? Aksi ini akan menghapus secara instan.
             </p>
+            {hapusError && <p className="text-sm text-[#FF5656] mb-4">{hapusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiHapus} disabled={deleteContent.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors whitespace-nowrap disabled:opacity-50">

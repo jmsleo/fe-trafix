@@ -122,10 +122,12 @@ export default function DaftarMemberPage() {
 
   // 4. STATE MODAL HAPUS
   const [itemYangDihapus, setItemYangDihapus] = useState<MemberRead | null>(null);
+  const [hapusError, setHapusError] = useState<string | null>(null);
 
   // 5. STATE MODAL BLOKIR / BUKA BLOKIR
   const [itemYangDiubahStatus, setItemYangDiubahStatus] = useState<MemberRead | null>(null);
   const [isBlockAction, setIsBlockAction] = useState(true);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const selectedPlan = plansData?.items?.find((p) => p.id === formData.plan_id);
 
@@ -266,7 +268,11 @@ export default function DaftarMemberPage() {
   const eksekusiHapus = () => {
     if (itemYangDihapus !== null) {
       deleteMember.mutate(itemYangDihapus.id, {
-        onSuccess: () => setItemYangDihapus(null),
+        onSuccess: () => {
+          setItemYangDihapus(null);
+          setHapusError(null);
+        },
+        onError: (err) => setHapusError(getApiErrorMessage(err, 'Gagal menghapus member.')),
       });
     }
   };
@@ -275,7 +281,17 @@ export default function DaftarMemberPage() {
     if (itemYangDiubahStatus === null) return;
     const id = itemYangDiubahStatus.id;
     const mutate = isBlockAction ? blockMember : unblockMember;
-    mutate.mutate(id, { onSuccess: () => setItemYangDiubahStatus(null) });
+    setStatusError(null);
+    mutate.mutate(id, {
+      onSuccess: () => {
+        setItemYangDiubahStatus(null);
+        setStatusError(null);
+      },
+      onError: (err) =>
+        setStatusError(
+          getApiErrorMessage(err, isBlockAction ? 'Gagal memblokir member.' : 'Gagal membuka blokir member.'),
+        ),
+    });
   };
 
   const items = [...(data?.items ?? [])].sort(
@@ -640,9 +656,10 @@ export default function DaftarMemberPage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">Hapus Member</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               Apakah Anda yakin ingin menghapus Member <span className="text-[#B5884D] font-bold">{itemYangDihapus.name}</span>? Aksi ini akan menghapus data secara instan.
             </p>
+            {hapusError && <p className="text-sm text-[#FF5656] mb-4">{hapusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiHapus} disabled={deleteMember.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors whitespace-nowrap disabled:opacity-50">
@@ -668,13 +685,14 @@ export default function DaftarMemberPage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">{isBlockAction ? 'Blokir Member' : 'Buka Blokir Member'}</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               {isBlockAction ? (
                 <>Apakah Anda yakin ingin memblokir Member <span className="text-[#B5884D] font-bold">{itemYangDiubahStatus.name}</span>? Member yang diblokir tidak dapat mengakses layanan.</>
               ) : (
                 <>Apakah Anda yakin ingin membuka blokir Member <span className="text-[#B5884D] font-bold">{itemYangDiubahStatus.name}</span>?</>
               )}
             </p>
+            {statusError && <p className="text-sm text-[#FF5656] mb-4">{statusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDiubahStatus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiUbahStatus} disabled={isBlockAction ? blockMember.isPending : unblockMember.isPending} className={`px-6 py-2.5 text-sm font-medium text-white rounded-[8px] transition-colors whitespace-nowrap disabled:opacity-50 ${isBlockAction ? 'bg-[#6e4f1a] border border-[#FFB74D]/50 hover:bg-[#8a6522]' : 'bg-[#2f6e3a] border border-[#79FF8D]/50 hover:bg-[#3a8448]'}`}>
