@@ -213,12 +213,19 @@ function toISODate(dateStr: string): string | null {
 
 const getBadgeColor = (action: string) => {
   switch (action) {
-    case 'UPDATE':
-    case 'LOGIN':
+    case 'update':
+    case 'login':
+    case 'start':
+    case 'end':
+    case 'unblock':
+    case 'cancel':
+    case 'restart':
       return 'border-[#79FF8D] bg-[#00FF2620] text-[#79FF8D]';
-    case 'DELETE':
+    case 'delete':
+    case 'logout':
+    case 'block':
       return 'border-[#FF5656] bg-[#FF565620] text-[#FF5656]';
-    case 'ADD':
+    case 'create':
       return 'border-[#567DFF] bg-[#567DFF20] text-[#567DFF]';
     default:
       return 'border-gray-400 bg-gray-400/20 text-gray-400';
@@ -349,14 +356,20 @@ export default function AuditLogPage() {
                 className="w-full appearance-none px-4 py-2.5 pr-10 text-sm bg-transparent border border-[#B5884D]/50 rounded-[7px] text-[#B5884D] focus:outline-none focus:border-[#B5884D] cursor-pointer"
               >
                 <option value="">Semua Modul</option>
-                <option value="tarif">Tarif</option>
+                <option value="parking-rate">Tarif</option>
                 <option value="gate">Gate</option>
                 <option value="member">Member</option>
+                <option value="member-subscription">Subscription Member</option>
+                <option value="subscription-plan">Paket Langganan</option>
                 <option value="shift">Shift</option>
+                <option value="operator-shift">Shift Operator</option>
+                <option value="operator-session">Sesi Operator</option>
                 <option value="user">User</option>
-                <option value="vehicle">Vehicle</option>
+                <option value="vehicle-type">Vehicle</option>
+                <option value="device">Device</option>
                 <option value="signage">Signage</option>
                 <option value="backup">Backup</option>
+                <option value="auth">Auth</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-[#B5884D]">▼</div>
             </div>
@@ -372,10 +385,18 @@ export default function AuditLogPage() {
                 className="w-full appearance-none px-4 py-2.5 pr-10 text-sm bg-transparent border border-[#B5884D]/50 rounded-[7px] text-[#B5884D] focus:outline-none focus:border-[#B5884D] cursor-pointer"
               >
                 <option value="">Semua Aksi</option>
-                <option value="UPDATE">UPDATE</option>
-                <option value="DELETE">DELETE</option>
-                <option value="ADD">ADD</option>
-                <option value="LOGIN">LOGIN</option>
+                <option value="create">CREATE</option>
+                <option value="update">UPDATE</option>
+                <option value="delete">DELETE</option>
+                <option value="login">LOGIN</option>
+                <option value="logout">LOGOUT</option>
+                <option value="start">START</option>
+                <option value="end">END</option>
+                <option value="block">BLOCK</option>
+                <option value="unblock">UNBLOCK</option>
+                <option value="cancel">CANCEL</option>
+                <option value="restart">RESTART</option>
+                <option value="status">STATUS</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-[#B5884D]">▼</div>
             </div>
