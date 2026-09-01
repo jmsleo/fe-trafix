@@ -7,7 +7,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Button from '@/app/components/ui/Button';
 import InputField from '@/app/components/ui/InputField';
 import { useLogin, useMe } from '@/hooks/useAuth';
-import { AxiosError } from 'axios';
+import { tokenStorage } from '@/lib/api/client';
+import { getApiErrorMessage } from '@/lib/api/errors';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -33,10 +34,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const unauthorizedRole = me && me.role !== 'admin' && me.role !== 'teknisi';
+
   useEffect(() => {
-    if (!meLoading && me) {
+    if (meLoading || !me) return;
+
+    if (me.role === 'admin' || me.role === 'teknisi') {
       router.push(homePathFor(me.role));
+      return;
     }
+
+    tokenStorage.clearTokens();
   }, [meLoading, me, router]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -52,9 +60,8 @@ export default function LoginPage() {
       { username, password },
       {
         onError: (err) => {
-          const axiosError = err as AxiosError<{ detail?: string }>;
           setError(
-            axiosError?.response?.data?.detail ?? 'Login gagal. Periksa kembali username dan kata sandi Anda.',
+            getApiErrorMessage(err, 'Login gagal. Periksa kembali username dan kata sandi Anda.'),
           );
         },
       },
@@ -110,6 +117,11 @@ export default function LoginPage() {
               />
             </div>
 
+            {unauthorizedRole && (
+              <p className="text-sm text-[#FF5656]">
+                {`Role '${me.role}' tidak diizinkan untuk masuk ke portal ini. Hanya Admin dan Teknisi yang dapat masuk.`}
+              </p>
+            )}
             {error && <p className="text-sm text-[#FF5656]">{error}</p>}
 
             <Button type="submit" disabled={login.isPending} className="w-full h-[48px] !w-full">
