@@ -71,6 +71,7 @@ export default function DaftarPackagePage() {
 
   // 4. STATE MODAL HAPUS
   const [itemYangDihapus, setItemYangDihapus] = useState<SubscriptionPlanRead | null>(null);
+  const [hapusError, setHapusError] = useState<string | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -154,7 +155,11 @@ export default function DaftarPackagePage() {
   const eksekusiHapus = () => {
     if (itemYangDihapus !== null) {
       deletePackage.mutate(itemYangDihapus.id, {
-        onSuccess: () => setItemYangDihapus(null),
+        onSuccess: () => {
+          setItemYangDihapus(null);
+          setHapusError(null);
+        },
+        onError: (err) => setHapusError(getApiErrorMessage(err, 'Gagal menghapus package.')),
       });
     }
   };
@@ -267,7 +272,7 @@ export default function DaftarPackagePage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center space-x-4">
                         <button onClick={() => handleKlikEdit(p)} className="text-[#B5884D] hover:text-white transition-colors">Edit</button>
-                        <button onClick={() => setItemYangDihapus(p)} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
+                        <button onClick={() => { setItemYangDihapus(p); setHapusError(null); }} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
                       </div>
                     </td>
 
@@ -410,9 +415,10 @@ export default function DaftarPackagePage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">Hapus Package</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               Apakah Anda yakin ingin menghapus Package <span className="text-[#B5884D] font-bold">{itemYangDihapus.name}</span>? Aksi ini tidak dapat dibatalkan.
             </p>
+            {hapusError && <p className="text-sm text-[#FF5656] mb-4">{hapusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiHapus} disabled={deletePackage.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors whitespace-nowrap disabled:opacity-50">

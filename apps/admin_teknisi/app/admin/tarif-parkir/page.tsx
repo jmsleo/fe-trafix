@@ -92,6 +92,7 @@ export default function TarifParkirPage() {
   const [idYangDiedit, setIdYangDiedit] = useState<string | null>(null);
   const [formData, setFormData] = useState<TarifForm>(emptyForm);
   const [itemYangDihapus, setItemYangDihapus] = useState<ParkingRateRead | null>(null);
+  const [hapusError, setHapusError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleInputChange = (
@@ -183,7 +184,11 @@ export default function TarifParkirPage() {
   const eksekusiHapus = () => {
     if (itemYangDihapus !== null) {
       deleteTarif.mutate(itemYangDihapus.id, {
-        onSuccess: () => setItemYangDihapus(null),
+        onSuccess: () => {
+          setItemYangDihapus(null);
+          setHapusError(null);
+        },
+        onError: (err) => setHapusError(getApiErrorMessage(err, 'Gagal menghapus tarif.')),
       });
     }
   };
@@ -296,7 +301,7 @@ export default function TarifParkirPage() {
                     <td className="px-6 py-4">
                       <div className="flex justify-center space-x-4">
                         <button onClick={() => handleKlikEdit(tarif)} className="text-[#B5884D] hover:text-white transition-colors">Edit</button>
-                        <button onClick={() => setItemYangDihapus(tarif)} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
+                        <button onClick={() => { setItemYangDihapus(tarif); setHapusError(null); }} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
                       </div>
                     </td>
                   </tr>
@@ -434,9 +439,10 @@ export default function TarifParkirPage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">Hapus Tarif</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               Apakah Anda yakin ingin menghapus Tarif <span className="text-[#B5884D] font-bold">{itemYangDihapus.name}</span>? Aksi ini akan menghapus di list secara instan.
             </p>
+            {hapusError && <p className="text-sm text-[#FF5656] mb-4">{hapusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors">Batal</button>
               <button onClick={eksekusiHapus} disabled={deleteTarif.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors disabled:opacity-50">

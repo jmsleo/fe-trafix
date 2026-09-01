@@ -56,6 +56,8 @@ export default function AssignmentsPage() {
   const [selectedSignageId, setSelectedSignageId] = useState('');
   const [selectedContentId, setSelectedContentId] = useState('');
   const [itemYangDihapus, setItemYangDihapus] = useState<SignageAssignmentRead | null>(null);
+  const [hapusError, setHapusError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -95,16 +97,23 @@ export default function AssignmentsPage() {
   };
 
   const handleToggleStatus = (assignment: SignageAssignmentRead) => {
-    updateStatus.mutate({
-      id: assignment.id,
-      data: { is_active: !assignment.is_active },
-    });
+    setStatusError(null);
+    updateStatus.mutate(
+      { id: assignment.id, data: { is_active: !assignment.is_active } },
+      {
+        onError: (err) => setStatusError(getApiErrorMessage(err, 'Gagal mengubah status assignment.')),
+      },
+    );
   };
 
   const eksekusiHapus = () => {
     if (itemYangDihapus !== null) {
       deleteAssignment.mutate(itemYangDihapus.id, {
-        onSuccess: () => setItemYangDihapus(null),
+        onSuccess: () => {
+          setItemYangDihapus(null);
+          setHapusError(null);
+        },
+        onError: (err) => setHapusError(getApiErrorMessage(err, 'Gagal menghapus assignment.')),
       });
     }
   };
@@ -230,7 +239,7 @@ export default function AssignmentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center">
-                        <button onClick={() => setItemYangDihapus(a)} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
+                        <button onClick={() => { setItemYangDihapus(a); setHapusError(null); }} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
                       </div>
                     </td>
                   </tr>
@@ -252,6 +261,8 @@ export default function AssignmentsPage() {
           </div>
         </div>
       </div>
+
+      {statusError && <p className="text-sm text-[#FF5656]">{statusError}</p>}
 
       {/* ========================================= */}
       {/* MODAL TAMBAH ASSIGNMENT                   */}
@@ -323,9 +334,10 @@ export default function AssignmentsPage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">Hapus Assignment</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               Apakah Anda yakin ingin menghapus assignment <span className="text-[#B5884D] font-bold">{itemYangDihapus.signage.name}</span> → <span className="text-[#B5884D] font-bold">{itemYangDihapus.content.title}</span>? Aksi ini akan menghapus secara instan.
             </p>
+            {hapusError && <p className="text-sm text-[#FF5656] mb-4">{hapusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiHapus} disabled={deleteAssignment.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors whitespace-nowrap disabled:opacity-50">

@@ -62,6 +62,7 @@ export default function SignageManagementPage() {
   const [idYangDiedit, setIdYangDiedit] = useState<string | null>(null);
   const [formData, setFormData] = useState<SignageForm>(emptyForm);
   const [itemYangDihapus, setItemYangDihapus] = useState<SignageRead | null>(null);
+  const [hapusError, setHapusError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -134,7 +135,11 @@ export default function SignageManagementPage() {
   const eksekusiHapus = () => {
     if (itemYangDihapus !== null) {
       deleteSignageMutation.mutate(itemYangDihapus.id, {
-        onSuccess: () => setItemYangDihapus(null),
+        onSuccess: () => {
+          setItemYangDihapus(null);
+          setHapusError(null);
+        },
+        onError: (err) => setHapusError(getApiErrorMessage(err, 'Gagal menghapus signage.')),
       });
     }
   };
@@ -244,7 +249,7 @@ export default function SignageManagementPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-center space-x-4">
                         <button onClick={() => handleKlikEdit(s)} className="text-[#B5884D] hover:text-white transition-colors">Edit</button>
-                        <button onClick={() => setItemYangDihapus(s)} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
+                        <button onClick={() => { setItemYangDihapus(s); setHapusError(null); }} className="text-[#FF5656] hover:text-white transition-colors">Hapus</button>
                       </div>
                     </td>
                   </tr>
@@ -379,9 +384,10 @@ export default function SignageManagementPage() {
               </div>
               <h2 className="text-[22px] font-bold text-[#B5884D]">Hapus Signage</h2>
             </div>
-            <p className="text-sm text-[#EAE1D8] mb-8 leading-relaxed">
+            <p className="text-sm text-[#EAE1D8] mb-4 leading-relaxed">
               Apakah Anda yakin ingin menghapus <span className="text-[#B5884D] font-bold">{itemYangDihapus.name} ({itemYangDihapus.code})</span>? Aksi ini akan menghapus secara instan.
             </p>
+            {hapusError && <p className="text-sm text-[#FF5656] mb-4">{hapusError}</p>}
             <div className="flex items-center justify-end gap-3">
               <button onClick={() => setItemYangDihapus(null)} className="px-6 py-2.5 text-sm font-medium text-[#B5884D] border border-[#B5884D] rounded-[8px] hover:bg-[#B5884D]/10 transition-colors whitespace-nowrap">Batal</button>
               <button onClick={eksekusiHapus} disabled={deleteSignageMutation.isPending} className="px-6 py-2.5 text-sm font-medium text-white bg-[#583333] border border-[#FF5656]/50 rounded-[8px] hover:bg-[#6e3e3e] transition-colors whitespace-nowrap disabled:opacity-50">
