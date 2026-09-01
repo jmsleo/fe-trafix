@@ -163,11 +163,8 @@ export default function DashboardPage() {
 
         {/* Chart 2: Grafik Kendaraan (Pie Chart Menggunakan CSS Conic-Gradient) */}
         <div className={`${radialCardClass}`}>
-          <div className="flex justify-between items-start mb-6">
+          <div className="mb-6">
             <h4 className="text-[#BF8F51] font-semibold text-sm">Grafik kendaraan</h4>
-            <select className="bg-transparent border border-[#BF8F51]/50 text-[10px] text-[#BF8F51] rounded px-2 py-1 outline-none">
-              <option className="bg-[#14110E]">Hari ini</option>
-            </select>
           </div>
           <div className="flex-1 flex flex-col items-center justify-between">
             {/* Full Pie Chart */}
@@ -196,11 +193,8 @@ export default function DashboardPage() {
 
         {/* Chart 3: Grafik Pembayaran (Donut Chart) */}
         <div className={`${radialCardClass}`}>
-          <div className="flex justify-between items-start mb-6">
+          <div className="mb-6">
             <h4 className="text-[#BF8F51] font-semibold text-sm">Grafik Pembayaran</h4>
-            <select className="bg-transparent border border-[#BF8F51]/50 text-[10px] text-[#BF8F51] rounded px-2 py-1 outline-none">
-              <option className="bg-[#14110E]">Hari ini</option>
-            </select>
           </div>
           <div className="flex-1 flex flex-col items-center justify-between">
             {/* Donut Chart */}
