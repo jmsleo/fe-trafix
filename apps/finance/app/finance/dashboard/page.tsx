@@ -37,6 +37,7 @@ export default function DashboardPage() {
 
   const [selectedDate, setSelectedDate] = useState(todayWib());
   const [selectedShiftId, setSelectedShiftId] = useState('');
+  const [isShiftDetailExpanded, setIsShiftDetailExpanded] = useState(false);
 
   const filterParams = useMemo<DashboardFilterParams>(
     () => ({
@@ -299,6 +300,73 @@ export default function DashboardPage() {
           </div>
         </div>
 
+      </div>
+
+      {/* Daftar Pendapatan Per Shift - Expandable Detail Table */}
+      <div className="space-y-4">
+        <div 
+          className="border border-[#BF8F51]/40 rounded-[10px] p-4 flex items-center justify-between cursor-pointer hover:border-[#BF8F51] transition-colors"
+          onClick={() => setIsShiftDetailExpanded(!isShiftDetailExpanded)}
+        >
+          <h3 className="text-lg font-bold text-[#EAE1D8]">Pendapatan Per Shift - Detail</h3>
+          <svg 
+            className={`text-[#BF8F51] transition-transform ${isShiftDetailExpanded ? 'rotate-180' : ''}`}
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+
+        {isShiftDetailExpanded && (
+          <div className={`${radialCardClass} overflow-x-auto`}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#BF8F51]/30">
+                  <th className="text-left px-4 py-3 text-[#BF8F51] font-semibold">Nama Shift</th>
+                  <th className="text-right px-4 py-3 text-[#BF8F51] font-semibold">Total Pendapatan</th>
+                  <th className="text-right px-4 py-3 text-[#BF8F51] font-semibold">Jumlah Transaksi</th>
+                  <th className="text-right px-4 py-3 text-[#BF8F51] font-semibold">Persentase</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shifts.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
+                      Belum ada data shift untuk tanggal yang dipilih
+                    </td>
+                  </tr>
+                ) : (
+                  shifts.map((shift, idx) => {
+                    const totalRevenue = shifts.reduce((sum, s) => sum + s.total_revenue, 0);
+                    const percentage = totalRevenue > 0 ? ((shift.total_revenue / totalRevenue) * 100).toFixed(1) : 0;
+                    return (
+                      <tr key={shift.exit_shift_id || idx} className={`border-b border-[#BF8F51]/20 hover:bg-[#BF8F51]/10 ${idx % 2 === 0 ? 'bg-[#1B140D]/50' : ''}`}>
+                        <td className="px-4 py-3 text-[#EAE1D8]">{shift.shift_name || '-'}</td>
+                        <td className="text-right px-4 py-3 text-[#BF8F51] font-semibold">{formatRupiah(shift.total_revenue)}</td>
+                        <td className="text-right px-4 py-3 text-[#EAE1D8]">{shift.total_transactions}</td>
+                        <td className="text-right px-4 py-3 text-[#BF8F51]">{percentage}%</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+            {shifts.length > 0 && (
+              <div className="border-t border-[#BF8F51]/30 mt-4 pt-4 flex justify-between font-semibold text-[#BF8F51]">
+                <span>Total</span>
+                <span className="flex gap-24">
+                  <span>{formatRupiah(shifts.reduce((sum, s) => sum + s.total_revenue, 0))}</span>
+                  <span className="text-right">{shifts.reduce((sum, s) => sum + s.total_transactions, 0)}</span>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
