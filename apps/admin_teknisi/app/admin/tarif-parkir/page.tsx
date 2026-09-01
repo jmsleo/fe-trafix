@@ -148,6 +148,16 @@ export default function TarifParkirPage() {
       return;
     }
 
+    if (formData.fee_category !== 'flat') {
+      const ticketCharge = toNumberOrNull(formData.ticket_charge);
+      const stayCharge = toNumberOrNull(formData.stay_charge);
+      
+      if (ticketCharge !== null && stayCharge !== null && ticketCharge < stayCharge) {
+        setFormError('Biaya maksimal harus tidak kurang dari tarif per jam.');
+        return;
+      }
+    }
+
     const payload = {
       name: formData.name.trim(),
       vehicle_type_id: formData.vehicle_type_id,
@@ -265,7 +275,7 @@ export default function TarifParkirPage() {
                 <th className="px-6 py-4 font-medium tracking-wider text-center">SKEMA</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">TARIF DASAR</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">PER JAM</th>
-                <th className="px-6 py-4 font-medium tracking-wider text-center">BIAYA TIKET</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-center">BIAYA MAKSIMAL</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">STATUS</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">TANGGAL UPDATE</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">AKSI</th>
@@ -391,7 +401,7 @@ export default function TarifParkirPage() {
               {formData.fee_category !== 'flat' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-300">Biaya Tiket (Rp)</label>
+                    <label className="text-sm font-medium text-gray-300">Biaya Maksimal (Rp)</label>
                     <input type="number" name="ticket_charge" value={formData.ticket_charge} onChange={handleInputChange} placeholder="Contoh: 2000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
                   </div>
                   <div className="space-y-1.5">
