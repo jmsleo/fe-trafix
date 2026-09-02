@@ -3,13 +3,14 @@
 import React, { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLogin } from '@/hooks/useAuth';
-import { useStartPosSession } from '@/hooks/usePos';
+import { useStartPosSession, usePosSession } from '@/hooks/usePos';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useLogin();
   const startSession = useStartPosSession();
+  const currentSession = usePosSession();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -35,9 +36,25 @@ export default function LoginPage() {
         await startSession.mutateAsync({});
       } catch (sessionErr: unknown) {
         const status = (sessionErr as { response?: { status?: number } })?.response?.status;
-        if (status !== 409) {
-          throw sessionErr;
+        if (status === 409) {
+          // Sesi aktif — pastikan masih dalam jam shift sebelum redirect.
+          // GET /api/pos/session menolak jika shift sudah berakhir.
+          try {
+            const sessionCheck = await currentSession.refetch();
+            if (sessionCheck.data && 'shift' in sessionCheck.data) {
+              router.replace('/dashboard-operator');
+              return;
+            }
+          } catch {
+            // session check gagal (shift berakhir) — jatuh ke error di bawah
+          }
+          setError(
+            'Anda memiliki sesi aktif di luar jam shift. '
+            + 'Hubungi admin untuk menyelesaikan sesi ini.',
+          );
+          return;
         }
+        throw sessionErr;
       }
       router.replace('/dashboard-operator');
     } catch (err: unknown) {
