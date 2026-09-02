@@ -29,6 +29,13 @@ export function useParkingRates(params?: SearchStatusParams) {
   });
 }
 
+export function useAllParkingRates() {
+  return useQuery({
+    queryKey: parkingRateKeys.list({ page: 1, page_size: 100 }),
+    queryFn: () => listParkingRates({ page: 1, page_size: 100 }),
+  });
+}
+
 export function useParkingRate(id: string) {
   return useQuery({
     queryKey: parkingRateKeys.detail(id),
