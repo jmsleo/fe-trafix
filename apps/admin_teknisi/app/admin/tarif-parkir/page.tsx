@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Button from '../../components/ui/Button';
 import {
+  useAllParkingRates,
   useCreateParkingRate,
   useDeleteParkingRate,
   useParkingRates,
@@ -84,6 +85,8 @@ export default function TarifParkirPage() {
     page_size: 10,
   });
 
+  const { data: allRatesData } = useAllParkingRates();
+
   const createTarif = useCreateParkingRate();
   const updateTarif = useUpdateParkingRate();
   const deleteTarif = useDeleteParkingRate();
@@ -137,6 +140,15 @@ export default function TarifParkirPage() {
 
     if (!formData.name.trim()) {
       setFormError('Nama tarif wajib diisi.');
+      return;
+    }
+    const normalizedName = formData.name.trim().toLowerCase();
+    const nameTaken = (allRatesData?.items ?? []).some(
+      (rate) =>
+        rate.id !== idYangDiedit && rate.name.trim().toLowerCase() === normalizedName,
+    );
+    if (nameTaken) {
+      setFormError('Nama tarif sudah digunakan. Silakan gunakan nama lain.');
       return;
     }
     if (!formData.vehicle_type_id) {
