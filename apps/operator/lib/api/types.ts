@@ -101,7 +101,9 @@ export interface OperatorSession {
 }
 
 export interface SessionStartRequest {
-  shift_id: string;
+  // Optional: the backend resolves the operator's current shift from their
+  // active assignment and the current time.
+  shift_id?: string;
   // Optional: the backend resolves the single configured exit gate.
   gate_id?: string;
 }
