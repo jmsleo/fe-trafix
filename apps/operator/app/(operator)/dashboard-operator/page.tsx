@@ -348,37 +348,52 @@ setShowPaymentModal(false);
             <div className="w-full h-auto rounded-[15px] border border-[#BF8F51] p-5 flex flex-col justify-between" style={radialBgStyle}>
               <div className="flex justify-between items-center mb-2">
                 <h2 className="font-bold text-[18px] text-[#BF8F51] tracking-wide">Pilih Tarif Kendaraan</h2>
-                <div className="border border-[#10B981]/50 bg-[#00FF26]/10 text-[#10B981] text-[12px] px-3 py-1 rounded-full font-medium tracking-wide">
-                  Gunakan tombol F1-F8 pada keyboard
+                {parkingRates.length > 0 && (
+                  <div className="border border-[#10B981]/50 bg-[#00FF26]/10 text-[#10B981] text-[12px] px-3 py-1 rounded-full font-medium tracking-wide">
+                    Gunakan tombol F1-F8 pada keyboard
+                  </div>
+                )}
+              </div>
+              {parkingRates.length === 0 ? (
+                <div className="flex items-center gap-3 mt-2 w-full border border-[#BF8F51]/50 rounded-[10px] px-4 py-4 bg-[#BF8F51]/5">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#BF8F51" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  <p className="text-[#BF8F51] text-[13px] font-medium leading-snug">
+                    Tarif parkir belum diatur. Silakan hubungi admin untuk menambahkan tarif parkir kendaraan.
+                  </p>
                 </div>
-              </div>
-              <div className="grid grid-cols-5 gap-3 mt-2 w-full">
-                {parkingRates.map((rate) => {
-                  const hotkey = hotkeyByRateId.get(rate.id);
-                  return (
-                    <button
-                      key={rate.id}
-                      onClick={() => selectRate(rate.id)}
-                      className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex flex-col items-center justify-center gap-0.5 whitespace-nowrap ${
-                        effectiveRate?.id === rate.id && mode === 'normal'
-                          ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
-                          : 'border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
-                      }`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        {hotkey && <span className="font-bold">{hotkey}</span>}
-                        <span>{rate.name}</span>
-                      </span>
-                      <span className="flex items-center gap-1.5 text-[10px] leading-none opacity-80">
-                        {rate.vehicle_type_name && <span>{rate.vehicle_type_name}</span>}
-                        <span>
-                          {rate.base_price === 0 ? 'Gratis' : formatRupiah(rate.base_price)}
+              ) : (
+                <div className="grid grid-cols-5 gap-3 mt-2 w-full">
+                  {parkingRates.map((rate) => {
+                    const hotkey = hotkeyByRateId.get(rate.id);
+                    return (
+                      <button
+                        key={rate.id}
+                        onClick={() => selectRate(rate.id)}
+                        className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex flex-col items-center justify-center gap-0.5 whitespace-nowrap ${
+                          effectiveRate?.id === rate.id && mode === 'normal'
+                            ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
+                            : 'border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          {hotkey && <span className="font-bold">{hotkey}</span>}
+                          <span>{rate.name}</span>
                         </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                        <span className="flex items-center gap-1.5 text-[10px] leading-none opacity-80">
+                          {rate.vehicle_type_name && <span>{rate.vehicle_type_name}</span>}
+                          <span>
+                            {rate.base_price === 0 ? 'Gratis' : formatRupiah(rate.base_price)}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* CARD 2: INPUT KENDARAAN */}
