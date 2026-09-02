@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   endPosSession,
-  getMyAssignedShifts,
   getPosRefs,
   getPosSession,
   manualTransaction,
@@ -25,22 +24,12 @@ import type {
 export const posKeys = {
   refs: ['pos', 'refs'] as const,
   session: ['pos', 'session'] as const,
-  myShifts: ['pos', 'my-shifts'] as const,
 };
 
 export function usePosRefs() {
   return useQuery({
     queryKey: posKeys.refs,
     queryFn: getPosRefs,
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useMyShifts(enabled = true) {
-  return useQuery({
-    queryKey: posKeys.myShifts,
-    queryFn: getMyAssignedShifts,
-    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

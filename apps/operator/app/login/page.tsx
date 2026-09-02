@@ -1,33 +1,22 @@
 'use client';
 
-import React, { useEffect, useState, type FormEvent } from 'react';
+import React, { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLogin, useMe } from '@/hooks/useAuth';
-import { useMyShifts, useStartPosSession } from '@/hooks/usePos';
+import { useLogin } from '@/hooks/useAuth';
+import { useStartPosSession } from '@/hooks/usePos';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useLogin();
   const startSession = useStartPosSession();
-  const { data: me, isLoading: meLoading } = useMe();
-
-  const [phase, setPhase] = useState<'credentials' | 'shift'>('credentials');
-  const { data: shifts, isLoading: shiftsLoading } = useMyShifts(phase === 'shift');
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [shiftId, setShiftId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!meLoading && me && me.role === 'operator' && phase === 'credentials') {
-      router.replace('/dashboard-operator');
-    }
-  }, [meLoading, me, router, phase]);
-
-  const handleCredentialsSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -39,33 +28,11 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login.mutateAsync({ username, password });
-      setPhase('shift');
-      setShiftId('');
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 403) {
-        setError('Akun ini bukan operator. Gunakan akun operator untuk masuk.');
-      } else {
-        setError(getApiErrorMessage(err, 'Login gagal. Periksa kembali username dan kata sandi Anda.'));
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
-  const handleShiftSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!shiftId) {
-      setError('Pilih shift kerja terlebih dahulu.');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
+      // Shift tidak dipilih operator: backend me-resolutionnya shift yang sedang
+      // berlangsung dari penugasan operator. Gagal bila di luar jam shift.
       try {
-        await startSession.mutateAsync({ shift_id: shiftId });
+        await startSession.mutateAsync({});
       } catch (sessionErr: unknown) {
         const status = (sessionErr as { response?: { status?: number } })?.response?.status;
         if (status !== 409) {
@@ -74,7 +41,20 @@ export default function LoginPage() {
       }
       router.replace('/dashboard-operator');
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Gagal memulai sesi kerja. Coba lagi.'));
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 403) {
+        const message = getApiErrorMessage(
+          err,
+          'Akun ini bukan operator. Gunakan akun operator untuk masuk.',
+        );
+        // 403 dari backend bisa berupa "Hak akses tidak mencukupi" (bukan
+        // operator) atau pesan jam shift dari endpoint sesi.
+        setError(message === 'Hak akses tidak mencukupi'
+          ? 'Akun ini bukan operator. Gunakan akun operator untuk masuk.'
+          : message);
+      } else {
+        setError(getApiErrorMessage(err, 'Login gagal. Periksa kembali username dan kata sandi Anda.'));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -127,93 +107,56 @@ export default function LoginPage() {
             </h2>
 
             <form
-              onSubmit={phase === 'credentials' ? handleCredentialsSubmit : handleShiftSubmit}
+              onSubmit={handleSubmit}
               className="space-y-5"
             >
-              {phase === 'credentials' ? (
-                <>
-                  {/* Input Username */}
-                  <div className="space-y-2">
-                    <label className="block text-[17px] font-semibold text-[#FFFFFF]">Username</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[#EAE1D8]">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => {
-                          setUsername(e.target.value);
-                          if (error) setError(null);
-                        }}
-                        placeholder="Username operator"
-                        autoComplete="username"
-                        className="w-full h-[50px] pl-12 pr-4 bg-[#595148] border-none rounded-[12px] text-[#EAE1D8] text-[15px] placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#BF8F51] transition-all"
-                      />
-                    </div>
+              {/* Input Username */}
+              <div className="space-y-2">
+                <label className="block text-[17px] font-semibold text-[#FFFFFF]">Username</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[#EAE1D8]">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                   </div>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    placeholder="Username operator"
+                    autoComplete="username"
+                    className="w-full h-[50px] pl-12 pr-4 bg-[#595148] border-none rounded-[12px] text-[#EAE1D8] text-[15px] placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#BF8F51] transition-all"
+                  />
+                </div>
+              </div>
 
-                  {/* Input Password */}
-                  <div className="space-y-2">
-                    <label className="block text-[17px] font-semibold text-[#FFFFFF]">Kata Sandi</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[#EAE1D8]">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                      </div>
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          if (error) setError(null);
-                        }}
-                        placeholder="••••••••"
-                        autoComplete="current-password"
-                        className="w-full h-[50px] pl-12 pr-4 bg-[#595148] border-none rounded-[12px] text-[#EAE1D8] text-[15px] placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#BF8F51] transition-all"
-                      />
-                    </div>
+              {/* Input Password */}
+              <div className="space-y-2">
+                <label className="block text-[17px] font-semibold text-[#FFFFFF]">Kata Sandi</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[#EAE1D8]">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
                   </div>
-                </>
-              ) : (
-                <>
-                  {/* Select Shift Kerja (dari penugasan shift operator) */}
-                  <div className="space-y-2">
-                    <label className="block text-[17px] font-semibold text-[#FFFFFF]">Pilih Shift Kerja</label>
-                    <div className="relative">
-                      <select
-                        value={shiftId}
-                        onChange={(e) => {
-                          setShiftId(e.target.value);
-                          if (error) setError(null);
-                        }}
-                        className="w-full h-[50px] pl-4 pr-10 bg-[#16120E] border border-[#BF8F51]/40 rounded-[12px] text-[#BF8F51] text-[17px] focus:outline-none focus:border-[#BF8F51] transition-all appearance-none cursor-pointer"
-                      >
-                        <option value="">Pilih Shift</option>
-                        {shiftsLoading && <option disabled>Memuat shift…</option>}
-                        {(shifts ?? []).map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[#BF8F51]">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <polygon points="6,9 18,9 12,16"></polygon>
-                        </svg>
-                      </div>
-                    </div>
-                    {!shiftsLoading && (shifts ?? []).length === 0 && (
-                      <p className="text-[#FF5656] text-[15px] leading-snug">
-                        Anda tidak memiliki shift yang ditugaskan. Hubungi admin.
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full h-[50px] pl-12 pr-4 bg-[#595148] border-none rounded-[12px] text-[#EAE1D8] text-[15px] placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#BF8F51] transition-all"
+                  />
+                </div>
+              </div>
 
               {/* UI Error Message */}
               {error && (
@@ -236,9 +179,7 @@ export default function LoginPage() {
                 >
                   {submitting
                     ? 'Memproses…'
-                    : phase === 'shift'
-                      ? 'Mulai Shift'
-                      : 'Masuk'}
+                    : 'Masuk'}
                 </button>
               </div>
             </form>
