@@ -360,7 +360,7 @@ setShowPaymentModal(false);
                       key={rate.id}
                       onClick={() => selectRate(rate.id)}
                       className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex flex-col items-center justify-center gap-0.5 whitespace-nowrap ${
-                        effectiveRate?.id === rate.id && mode === 'normal'
+                        effectiveRate?.id === rate.id
                           ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
                           : 'border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
                       }`}
