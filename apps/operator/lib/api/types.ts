@@ -101,7 +101,8 @@ export interface OperatorSession {
 }
 
 export interface SessionStartRequest {
-  shift_id: string;
+  // Optional: auto-resolved from the operator's currently-covering shift.
+  shift_id?: string;
   // Optional: the backend resolves the single configured exit gate.
   gate_id?: string;
 }
