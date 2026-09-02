@@ -12,7 +12,7 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 
 type Mode = 'normal' | 'manual' | 'lost';
 
-// How many vehicle classes get an F-key shortcut; the rest stay clickable.
+// How many tariffs get an F-key shortcut; the rest stay clickable.
 const KEYED_SLOTS = 8;
 
 export default function OperatorDashboardPage() {
@@ -33,7 +33,7 @@ export default function OperatorDashboardPage() {
   const [waktu, setWaktu] = useState('');
   const [platKendaraan, setPlatKendaraan] = useState('');
   const [ticketCode, setTicketCode] = useState('');
-  const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
+  const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('normal');
   const [quoteData, setQuoteData] = useState<{ total: number; duration: string; breakdown: string; member: boolean; name?: string | null; plate?: string | null; timeIn?: string | null; timeOut?: string | null; vehicleId?: number | null } | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -53,26 +53,30 @@ export default function OperatorDashboardPage() {
   // the session payload itself.
   const gateCode = useMemo(() => session?.gate?.gate_code ?? null, [session]);
 
-  // The grid mirrors exactly what admin configured (ACTIVE classes from
-  // /pos/refs), sorted by name; the first KEYED_SLOTS get F-key shortcuts.
-  const vehicleTypes = useMemo(
-    () => [...(refs?.vehicle_types ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+  // The picker is driven by the tarif parkir (parking_rates) the admin
+  // configured — each button is one ACTIVE tariff, not a bare vehicle class.
+  const parkingRates = useMemo(
+    () => [...(refs?.rates ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
     [refs],
   );
-  const hotkeyByTypeId = useMemo(() => {
+  const hotkeyByRateId = useMemo(() => {
     const map = new Map<string, string>();
-    vehicleTypes.slice(0, KEYED_SLOTS).forEach((vt, i) => map.set(vt.id, `F${i + 1}`));
+    parkingRates.slice(0, KEYED_SLOTS).forEach((rate, i) => map.set(rate.id, `F${i + 1}`));
     return map;
-  }, [vehicleTypes]);
+  }, [parkingRates]);
 
-  // Falls back to the first class while the stored pick is missing/stale
-  // (initial load, admin removed the type).
-  const effectiveTypeId = useMemo(() => {
-    if (selectedTypeId && vehicleTypes.some((vt) => vt.id === selectedTypeId)) {
-      return selectedTypeId;
+  // Falls back to the first tariff while the stored pick is missing/stale
+  // (initial load, admin removed the rate).
+  const effectiveRate = useMemo(() => {
+    if (selectedRateId) {
+      const found = parkingRates.find((rate) => rate.id === selectedRateId);
+      if (found) return found;
     }
-    return vehicleTypes[0]?.id ?? null;
-  }, [selectedTypeId, vehicleTypes]);
+    return parkingRates[0] ?? null;
+  }, [selectedRateId, parkingRates]);
+  // The tariff's vehicle class rides along as a fallback signal for the
+  // backend (parking_rate_id is the authoritative pricing input).
+  const effectiveTypeId = effectiveRate?.vehicle_type_id ?? null;
 
   const showToast = useCallback((type: 'error' | 'success', title: string, body: string) => {
     setToast({ type, title, body });
@@ -80,8 +84,8 @@ export default function OperatorDashboardPage() {
     toastTimer.current = setTimeout(() => setToast(null), 6000);
   }, []);
 
-  const selectType = useCallback((vtId: string) => {
-    setSelectedTypeId(vtId);
+  const selectRate = useCallback((rateId: string) => {
+    setSelectedRateId(rateId);
     setMode('normal');
   }, []);
 
@@ -89,7 +93,7 @@ export default function OperatorDashboardPage() {
     setPlatKendaraan('');
     setTicketCode('');
     setQuoteData(null);
-    setSelectedTypeId(null);
+    setSelectedRateId(null);
     setMode('normal');
   }, []);
 
@@ -124,15 +128,15 @@ export default function OperatorDashboardPage() {
         setMode('lost');
         return;
       }
-      const match = [...hotkeyByTypeId.entries()].find(([, hotkey]) => hotkey === upper);
+      const match = [...hotkeyByRateId.entries()].find(([, hotkey]) => hotkey === upper);
       if (match) {
         e.preventDefault();
-        selectType(match[0]);
+        selectRate(match[0]);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hotkeyByTypeId, selectType]);
+  }, [hotkeyByRateId, selectRate]);
 
   useEffect(() => {
     if (!gateCode) return;
@@ -162,8 +166,8 @@ export default function OperatorDashboardPage() {
         showToast('error', 'Data Tidak Ditemukan', 'Silakan masukkan nomor plat kendaraan terlebih dahulu.');
         return;
       }
-      if (!effectiveTypeId) {
-        showToast('error', 'Jenis Kendaraan', 'Pilih jenis kendaraan untuk tiket manual / hilang.');
+      if (!effectiveTypeId || !effectiveRate) {
+        showToast('error', 'Tarif Parkir', 'Pilih tarif kendaraan untuk tiket manual / hilang.');
         return;
       }
       // Ask the backend what this ticket will actually cost before taking
@@ -174,6 +178,7 @@ export default function OperatorDashboardPage() {
           lost_ticket: mode === 'lost',
           police_number: platKendaraan.trim(),
           vehicle_type_id: effectiveTypeId,
+          parking_rate_id: effectiveRate.id,
         });
         if (res.status !== 'success' || !res.data) {
           showToast('error', 'Data Tidak Ditemukan', res.message || 'Tarif tidak dapat dihitung.');
@@ -204,6 +209,7 @@ export default function OperatorDashboardPage() {
         transaction_code: ticketCode.trim() || null,
         police_number: platKendaraan.trim() || null,
         vehicle_type_id: effectiveTypeId,
+        parking_rate_id: effectiveRate?.id ?? null,
       });
       if (res.status !== 'success' || !res.data) {
         showToast('error', 'Data Tidak Ditemukan', res.message || 'Silakan masukkan nomor plat secara manual atau scan ulang tiket.');
@@ -233,6 +239,7 @@ export default function OperatorDashboardPage() {
         const res = await manualTx.mutateAsync({
           police_number: platKendaraan.trim(),
           vehicle_type_id: effectiveTypeId,
+          parking_rate_id: effectiveRate?.id ?? null,
           payment_method: metodeBayar,
         });
 setShowPaymentModal(false);
@@ -247,6 +254,7 @@ setShowPaymentModal(false);
         police_number: platKendaraan.trim() || null,
         lost_ticket: mode === 'lost',
         vehicle_type_id: effectiveTypeId,
+        parking_rate_id: effectiveRate?.id ?? null,
         payment_method: metodeBayar,
       });
       if (res.status !== 'success' || !res.data) {
@@ -339,33 +347,34 @@ setShowPaymentModal(false);
             {/* CARD 1: PILIH KENDARAAN */}
             <div className="w-full h-auto rounded-[15px] border border-[#BF8F51] p-5 flex flex-col justify-between" style={radialBgStyle}>
               <div className="flex justify-between items-center mb-2">
-                <h2 className="font-bold text-[18px] text-[#BF8F51] tracking-wide">Pilih Kendaraan</h2>
+                <h2 className="font-bold text-[18px] text-[#BF8F51] tracking-wide">Pilih Tarif Kendaraan</h2>
                 <div className="border border-[#10B981]/50 bg-[#00FF26]/10 text-[#10B981] text-[12px] px-3 py-1 rounded-full font-medium tracking-wide">
                   Gunakan tombol F1-F8 pada keyboard
                 </div>
               </div>
               <div className="grid grid-cols-5 gap-3 mt-2 w-full">
-                {vehicleTypes.map((vt) => {
-                  const hotkey = hotkeyByTypeId.get(vt.id);
+                {parkingRates.map((rate) => {
+                  const hotkey = hotkeyByRateId.get(rate.id);
                   return (
                     <button
-                      key={vt.id}
-                      onClick={() => selectType(vt.id)}
+                      key={rate.id}
+                      onClick={() => selectRate(rate.id)}
                       className={`border rounded-[8px] min-h-[36px] px-2 py-1 text-[13px] transition flex flex-col items-center justify-center gap-0.5 whitespace-nowrap ${
-                        effectiveTypeId === vt.id && mode === 'normal'
+                        effectiveRate?.id === rate.id && mode === 'normal'
                           ? 'bg-[#BF8F51] text-[#17130E] border-[#BF8F51] font-bold'
                           : 'border-[#BF8F51] text-[#BF8F51] hover:bg-[#BF8F51]/10'
                       }`}
                     >
                       <span className="flex items-center gap-1.5">
                         {hotkey && <span className="font-bold">{hotkey}</span>}
-                        <span>{vt.name}</span>
+                        <span>{rate.name}</span>
                       </span>
-                      {vt.base_price !== null && (
-                        <span className="text-[10px] leading-none opacity-80">
-                          {vt.base_price === 0 ? 'Gratis' : formatRupiah(vt.base_price)}
+                      <span className="flex items-center gap-1.5 text-[10px] leading-none opacity-80">
+                        {rate.vehicle_type_name && <span>{rate.vehicle_type_name}</span>}
+                        <span>
+                          {rate.base_price === 0 ? 'Gratis' : formatRupiah(rate.base_price)}
                         </span>
-                      )}
+                      </span>
                     </button>
                   );
                 })}

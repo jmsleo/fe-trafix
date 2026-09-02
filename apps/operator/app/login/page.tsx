@@ -30,6 +30,8 @@ export default function LoginPage() {
     try {
       await login.mutateAsync({ username, password });
 
+      // Shift tidak dipilih operator: backend me-resolutionnya shift yang sedang
+      // berlangsung dari penugasan operator. Gagal bila di luar jam shift.
       try {
         await startSession.mutateAsync({});
       } catch (sessionErr: unknown) {
@@ -62,11 +64,11 @@ export default function LoginPage() {
           err,
           'Akun ini bukan operator. Gunakan akun operator untuk masuk.',
         );
-        if (message === 'Hak akses tidak mencukupi') {
-          setError('Akun ini bukan operator. Gunakan akun operator untuk masuk.');
-        } else {
-          setError(message);
-        }
+        // 403 dari backend bisa berupa "Hak akses tidak mencukupi" (bukan
+        // operator) atau pesan jam shift dari endpoint sesi.
+        setError(message === 'Hak akses tidak mencukupi'
+          ? 'Akun ini bukan operator. Gunakan akun operator untuk masuk.'
+          : message);
       } else {
         setError(getApiErrorMessage(err, 'Login gagal. Periksa kembali username dan kata sandi Anda.'));
       }
