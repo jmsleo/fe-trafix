@@ -106,7 +106,6 @@ export default function TarifParkirPage() {
       const next = { ...prev, [name]: value };
       if (name === 'fee_category' && value === 'flat') {
         next.stay_charge = '';
-        next.ticket_charge = '';
       }
       return next;
     });
@@ -158,16 +157,6 @@ export default function TarifParkirPage() {
     if (!formData.base_price) {
       setFormError('Tarif dasar wajib diisi.');
       return;
-    }
-
-    if (formData.fee_category !== 'flat') {
-      const ticketCharge = toNumberOrNull(formData.ticket_charge);
-      const stayCharge = toNumberOrNull(formData.stay_charge);
-      
-      if (ticketCharge !== null && stayCharge !== null && ticketCharge < stayCharge) {
-        setFormError('Biaya maksimal harus tidak kurang dari tarif per jam.');
-        return;
-      }
     }
 
     const payload = {
@@ -287,7 +276,7 @@ export default function TarifParkirPage() {
                 <th className="px-6 py-4 font-medium tracking-wider text-center">SKEMA</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">TARIF DASAR</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">PER JAM</th>
-                <th className="px-6 py-4 font-medium tracking-wider text-center">BIAYA MAKSIMAL</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-center">TIKET HILANG</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">STATUS</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">TANGGAL UPDATE</th>
                 <th className="px-6 py-4 font-medium tracking-wider text-center">AKSI</th>
@@ -410,24 +399,16 @@ export default function TarifParkirPage() {
                   </div>
                 </div>
               )}
-              {formData.fee_category !== 'flat' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-300">Biaya Maksimal (Rp)</label>
-                    <input type="number" name="ticket_charge" value={formData.ticket_charge} onChange={handleInputChange} placeholder="Contoh: 2000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-300">Grace Period (menit)</label>
-                    <input type="number" name="grace_period_minutes" value={formData.grace_period_minutes} onChange={handleInputChange} placeholder="Contoh: 15" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-gray-300">Biaya Tiket Hilang (Rp)</label>
+                  <input type="number" name="ticket_charge" value={formData.ticket_charge} onChange={handleInputChange} placeholder="Contoh: 20000" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
                 </div>
-              )}
-              {formData.fee_category === 'flat' && (
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-gray-300">Grace Period (menit)</label>
                   <input type="number" name="grace_period_minutes" value={formData.grace_period_minutes} onChange={handleInputChange} placeholder="Contoh: 15" className="w-full px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]" />
                 </div>
-              )}
+              </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-gray-300">Status</label>
                 <select name="status" value={formData.status} onChange={handleInputChange} className="w-full appearance-none px-4 py-2.5 text-sm bg-black border border-[#B5884D]/50 rounded-[7px] text-[#EAE1D8] focus:outline-none focus:border-[#B5884D]">
