@@ -57,10 +57,24 @@ export interface VehicleTypeRef {
   status: string;
 }
 
+export interface ParkingRateRef {
+  id: string;
+  name: string;
+  vehicle_type_id: string;
+  vehicle_type_name: string | null;
+  base_price: number;
+  fee_category: string;
+  ticket_charge: number | null;
+  stay_charge: number | null;
+  status: string;
+  updated_at: string | null;
+}
+
 export interface PosRefs {
   shifts: ShiftRef[];
   gates: GateRef[];
   vehicle_types: VehicleTypeRef[];
+  rates: ParkingRateRef[];
 }
 
 export interface OperatorBrief {
@@ -115,6 +129,8 @@ export interface PosQuoteRequest {
   vehicle_id?: number | null;
   // An admin-managed vehicle class; wins over the legacy wire id.
   vehicle_type_id?: string | null;
+  // The exact administered tarif parkir; wins over the vehicle class lookup.
+  parking_rate_id?: string | null;
   // Price a manual ticket even though no transaction exists yet.
   manual?: boolean;
   // Payment method chosen by the cashier (TUNAI / QRIS / E-MONEY).
@@ -197,6 +213,8 @@ export interface PosManualRequest {
   police_number: string;
   vehicle_id?: number | null;
   vehicle_type_id?: string | null;
+  // The exact administered tarif parkir; wins over the vehicle class lookup.
+  parking_rate_id?: string | null;
   total?: number | null;
   payment_method?: string | null;
 }
